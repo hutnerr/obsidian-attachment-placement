@@ -1,3 +1,18 @@
+## Overview
+This plugin aims to provide a dynamic, rule-based system for placing resources within a file structure.
+
+Instead of hardcoding a single location for assets, users can define placement rules at different directory or file levels. When a resource is created or added, the plugin resolves the most specific applicable rule by walking up the directory tree until a match is found.
+
+This project is currently in the design and early development phase and should be considered a work in progress.
+
+## Support
+If you found this project helpful or enjoyable, and want to support future work, you can buy me a coffee on Ko-fi
+<br>
+Totally optional, always appreciated.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/S6S71TM9XT)
+
+<!--
 # Obsidian Sample Plugin
 
 This is a sample plugin for Obsidian (https://obsidian.md).
@@ -88,3 +103,5 @@ If you have multiple URLs, you can also do:
 ## API Documentation
 
 See https://docs.obsidian.md
+
+-->
