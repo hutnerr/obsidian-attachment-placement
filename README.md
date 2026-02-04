@@ -1,9 +1,34 @@
 ## Overview
-This plugin aims to provide a dynamic, rule-based system for placing resources within a file structure.
+This plugin is meant to make resource placement more flexible and context-aware.
 
-Instead of hardcoding a single location for assets, users can define placement rules at different directory or file levels. When a resource is created or added, the plugin resolves the most specific applicable rule by walking up the directory tree until a match is found.
+Instead of forcing all resources into a single hardcoded folder, it lets you define where resources should go based on the file or folder you’re currently working in. The plugin will walk up the directory tree and use the first placement rule it finds.
 
-This project is currently in the design and early development phase and should be considered a work in progress.
+This project is still in the planning and early development stage and should be considered a work in progress.
+
+## Core Concept
+Placement rules can be defined on individual files or folders.
+
+When a resource is added:
+1. The plugin checks if the current file has a placement rule.
+2. If not, it checks the parent folder.
+3. This continues upward until a rule is found.
+4. The resource is placed according to that rule.
+
+This keeps resource organization local when needed, while still allowing higher-level fallbacks.
+
+## Example
+Given the following structure:
+
+games/<br/>
+└── league.md
+
+If `league.md` defines a placement rule, related resources will be placed there.
+
+If it does not, the plugin will check:
+- `games/`
+- then the project root
+
+This allows very specific behavior where you want it, without breaking organization elsewhere.
 
 ## Support
 If you found this project helpful or enjoyable, and want to support future work, you can buy me a coffee on Ko-fi
