@@ -1,97 +1,52 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import { App, Editor, MarkdownView, Modal, Notice, Plugin } from 'obsidian';
+import { DEFAULT_SETTINGS, Settings, SettingsTab } from "./settings";
+import { Clogger } from 'clogger';
+import { PlacementManager } from './placement';
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class AttachmentPlacementPlugin extends Plugin {
+	settings: Settings;
+	placementManager: PlacementManager;
 
 	async onload() {
+		Clogger.debug('Starting AttachmentPlacementPlugin...', true);
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+		this.placementManager = new PlacementManager();
+		this.addSettingTab(new SettingsTab(this.app, this));
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
+		this.registerEvent(
+			this.app.vault.on("create", (file) => {
+				Clogger.debug(`File created: ${file.path}`, true);
+				this.placementManager.handleNewFile(file.path);
+			})
+		);
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample editor command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+		// TODO: I should also add like a "resort" command that can be triggered manually
+		// that will go through all files and move them to the right place. 
+		// useful for testing and also for users who want to fix what they already have.
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			}
-		});
+		// maybe I can have a resort folder button that appears when you right click on a folder. 
+		// for the todo button above, it can just take in the root folder to use 
+		// the same function for both.
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			new Notice("Click");
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-
+		Clogger.debug('AttachmentPlacementPlugin loaded successfully.', true);
 	}
 
-	onunload() {
+	async onunload() {
+		Clogger.debug('Unloading AttachmentPlacementPlugin...', true);
+		Clogger.debug('AttachmentPlacementPlugin unloaded successfully.', true);
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<MyPluginSettings>);
+		Clogger.debug('Loading settings...');
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<Settings>);
+		Clogger.debug('Settings loaded: ' + JSON.stringify(this.settings));
 	}
 
 	async saveSettings() {
+		Clogger.debug('Saving settings...');
 		await this.saveData(this.settings);
+		Clogger.debug('Settings saved: ' + JSON.stringify(this.settings));
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}

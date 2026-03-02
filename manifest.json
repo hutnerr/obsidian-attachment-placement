@@ -3,7 +3,7 @@
 	"name": "Attachment Placement",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "This plugin allows custom placement of attachments in your vault.",
+	"description": "This plugin allows custom placement of attachments in your vault through user-defined mappings of a source to a destination.",
 	"author": "Hunter Baker",
 	"authorUrl": "https://www.hunter-baker.com/",
 	"isDesktopOnly": true
