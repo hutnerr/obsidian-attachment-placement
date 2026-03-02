@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, TFolder } from "obsidian";
+import { App, AbstractInputSuggest, TAbstractFile, PluginSettingTab, Setting, TFolder } from "obsidian";
 import AttachmentPlacementPlugin from "./main";
 import { Clogger } from "clogger";
 
@@ -13,6 +13,7 @@ export interface Settings {
 	fallbackPath: string;
 	fallbackDepthLimit?: number;
 	notificationsEnabled: boolean;
+	includeMdFilesInSuggestions: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -20,74 +21,43 @@ export const DEFAULT_SETTINGS: Settings = {
 	fallbackPath: "",
 	fallbackDepthLimit: undefined,
 	notificationsEnabled: true,
+	includeMdFilesInSuggestions: false,
 };
 
 function generateId(): string {
 	return Math.random().toString(36).slice(2, 10);
 }
 
-function addPathAutocomplete(app: App, inputEl: HTMLInputElement, foldersOnly = false): () => void {
-	let dropdown: HTMLDivElement | null = null;
+export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
+	constructor(
+		app: App,
+		private inputEl: HTMLInputElement,
+		private foldersOnly = false
+	) {
+		super(app, inputEl);
+	}
 
-	const remove = () => { dropdown?.remove(); dropdown = null; };
+	getSuggestions(query: string): TAbstractFile[] {
+		const lower = query.toLowerCase();
 
-	const show = (query: string) => {
-		remove();
-		const q = query.toLowerCase();
-		const matches = app.vault.getAllLoadedFiles()
-			.filter(f => (!foldersOnly || f instanceof TFolder) && f.path.toLowerCase().includes(q))
-			.map(f => f instanceof TFolder ? f.path + "/" : f.path)
-			.slice(0, 15);
+		return this.app.vault.getAllLoadedFiles()
+			.filter(file => {
+				if (this.foldersOnly && !(file instanceof TFolder)) return false;
+				return file.path.toLowerCase().includes(lower);
+			})
+			.slice(0, 50);
+	}
 
-		if (!matches.length) return;
+	renderSuggestion(file: TAbstractFile, el: HTMLElement) {
+		el.createEl("div", { text: file.path });
+	}
 
-		dropdown = inputEl.ownerDocument.createElement("div");
-		Object.assign(dropdown.style, {
-			position: "fixed", zIndex: "9999",
-			background: "var(--background-primary)",
-			border: "1px solid var(--background-modifier-border)",
-			borderRadius: "6px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-			maxHeight: "180px", overflowY: "auto", fontSize: "12px",
-			fontFamily: "var(--font-monospace)",
-		});
-
-		const rect = inputEl.getBoundingClientRect();
-		dropdown.style.top = `${rect.bottom + 2}px`;
-		dropdown.style.left = `${rect.left}px`;
-		dropdown.style.width = `${rect.width}px`;
-
-		matches.forEach(m => {
-			const item = dropdown!.createEl("div", { text: m });
-			Object.assign(item.style, {
-				padding: "5px 10px", cursor: "pointer", color: "var(--text-normal)",
-			});
-			item.addEventListener("mouseenter", () => item.style.background = "var(--background-modifier-hover)");
-			item.addEventListener("mouseleave", () => item.style.background = "");
-			item.addEventListener("mousedown", e => {
-				e.preventDefault();
-				inputEl.value = m;
-				inputEl.dispatchEvent(new Event("input"));
-				remove();
-			});
-			dropdown!.appendChild(item);
-		});
-
-		inputEl.ownerDocument.body.appendChild(dropdown);
-	};
-
-	const onInput = () => show(inputEl.value.trim());
-	const onBlur = () => setTimeout(remove, 150);
-
-	inputEl.addEventListener("input", onInput);
-	inputEl.addEventListener("focus", onInput);
-	inputEl.addEventListener("blur", onBlur);
-
-	return () => {
-		inputEl.removeEventListener("input", onInput);
-		inputEl.removeEventListener("focus", onInput);
-		inputEl.removeEventListener("blur", onBlur);
-		remove();
-	};
+	selectSuggestion(file: TAbstractFile) {
+		const value = file instanceof TFolder ? file.path + "/" : file.path;
+		this.inputEl.value = value;
+		this.inputEl.trigger("input");
+		this.close();
+	}
 }
 
 export class SettingsTab extends PluginSettingTab {
@@ -124,15 +94,14 @@ export class SettingsTab extends PluginSettingTab {
 						this.plugin.settings.fallbackPath = value;
 						await this.plugin.saveSettings();
 					});
-				this.cleanups.push(addPathAutocomplete(this.app, text.inputEl, true));
+				new PathSuggest(this.app, text.inputEl, true);
 			});
 
 		new Setting(containerEl)
 			.setName("Fallback Depth Limit")
 			.setDesc(
-				"When searching upwards for a folder to place attachments, " +
-				"this limits how many levels it will go up before giving up and using the fallback " +
-				"destination. Likely only useful if experiencing lag or for extremely nested folder structures. " +
+				"How many levels it will go up before giving up and using the fallback destination. " +
+				"Likely only useful if experiencing lag or for extremely nested folder structures. " +
 				"Leave empty for no limit."
 			)
 			.addText(text => {
@@ -157,11 +126,25 @@ export class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
+			.setName("Include MD files in suggestions")
+			.setDesc(
+				"When enabled, MD files will be included in the suggestions for attachment placement. " +
+				"When disabled, only folders will be suggested. " +
+				"This only affects the suggestions and does not prevent you from manually entering a file path."
+			)
+			.addToggle(toggle => {
+				toggle.setValue(this.plugin.settings.includeMdFilesInSuggestions).onChange(async value => {
+					this.plugin.settings.includeMdFilesInSuggestions = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
 			.setName("Reset Settings")
 			.setDesc("Reset all settings to their default values. This cannot be undone.")
 			.addButton(btn =>
 				btn
-					.setButtonText("Reset")
+					.setButtonText("Reset Defaults")
 					.setWarning()
 					.onClick(async () => {
 						if (confirm("Are you sure you want to reset all settings?")) {
@@ -203,7 +186,7 @@ export class SettingsTab extends PluginSettingTab {
 							rule.sourcePath = value;
 							await this.plugin.saveSettings();
 						});
-					this.cleanups.push(addPathAutocomplete(this.app, text.inputEl, false));
+					new PathSuggest(this.app, text.inputEl, true);
 				})
 				.addText(text => {
 					text.inputEl.style.width = "180px";
@@ -214,7 +197,7 @@ export class SettingsTab extends PluginSettingTab {
 							rule.destinationPath = value;
 							await this.plugin.saveSettings();
 						});
-					this.cleanups.push(addPathAutocomplete(this.app, text.inputEl, true));
+					new PathSuggest(this.app, text.inputEl, true);
 				})
 				.addButton(btn =>
 					btn
