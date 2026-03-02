@@ -1,4 +1,4 @@
-import { App, AbstractInputSuggest, TAbstractFile, PluginSettingTab, Setting, TFolder } from "obsidian";
+import { App, AbstractInputSuggest, TAbstractFile, TFile, PluginSettingTab, Setting, TFolder } from "obsidian";
 import AttachmentPlacementPlugin from "./main";
 import { Clogger } from "clogger";
 
@@ -28,11 +28,16 @@ function generateId(): string {
 	return Math.random().toString(36).slice(2, 10);
 }
 
+
+
 export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
 	constructor(
 		app: App,
 		private inputEl: HTMLInputElement,
-		private foldersOnly = false
+		private options: {
+			foldersOnly: boolean;
+			includeMdFiles: () => boolean;
+		}
 	) {
 		super(app, inputEl);
 	}
@@ -42,8 +47,28 @@ export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
 
 		return this.app.vault.getAllLoadedFiles()
 			.filter(file => {
-				if (this.foldersOnly && !(file instanceof TFolder)) return false;
-				return file.path.toLowerCase().includes(lower);
+				if (!file.path.toLowerCase().includes(lower)) return false;
+
+				// Folder-only mode
+				if (this.options.foldersOnly) {
+					return file instanceof TFolder;
+				}
+
+				// Always allow folders
+				if (file instanceof TFolder) return true;
+
+				// Handle files
+				if (file instanceof TFile) {
+					// Only allow MD files when enabled
+					if (this.options.includeMdFiles()) {
+						return file.extension === "md";
+					}
+
+					// If MD not included → no files allowed
+					return false;
+				}
+
+				return false;
 			})
 			.slice(0, 50);
 	}
@@ -62,7 +87,6 @@ export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
 
 export class SettingsTab extends PluginSettingTab {
 	plugin: AttachmentPlacementPlugin;
-	private cleanups: Array<() => void> = [];
 
 	constructor(app: App, plugin: AttachmentPlacementPlugin) {
 		super(app, plugin);
@@ -70,17 +94,13 @@ export class SettingsTab extends PluginSettingTab {
 		Clogger.debug("Initializing settings tab...", true);
 	}
 
-	hide() {
-		this.cleanups.forEach(fn => fn());
-		this.cleanups = [];
-	}
+	hide() { }
 
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		this.cleanups.forEach(fn => fn());
-		this.cleanups = [];
 
+		// GENERAL SETTINGS
 		containerEl.createEl("h2", { text: "Attachment Placement" });
 
 		new Setting(containerEl)
@@ -94,7 +114,10 @@ export class SettingsTab extends PluginSettingTab {
 						this.plugin.settings.fallbackPath = value;
 						await this.plugin.saveSettings();
 					});
-				new PathSuggest(this.app, text.inputEl, true);
+				new PathSuggest(this.app, text.inputEl, {
+					foldersOnly: true,
+					includeMdFiles: () => this.plugin.settings.includeMdFilesInSuggestions
+				});
 			});
 
 		new Setting(containerEl)
@@ -171,7 +194,7 @@ export class SettingsTab extends PluginSettingTab {
 					})
 			);
 
-		// ── Rules ────────────────────────────────────────────────────────────────
+		// PLACEMENT RULES
 		containerEl.createEl("h3", { text: "Placement Rules" });
 
 		this.plugin.settings.rules.forEach((rule, i) => {
@@ -186,7 +209,10 @@ export class SettingsTab extends PluginSettingTab {
 							rule.sourcePath = value;
 							await this.plugin.saveSettings();
 						});
-					new PathSuggest(this.app, text.inputEl, true);
+					new PathSuggest(this.app, text.inputEl, {
+						foldersOnly: false,
+						includeMdFiles: () => this.plugin.settings.includeMdFilesInSuggestions
+					});
 				})
 				.addText(text => {
 					text.inputEl.style.width = "180px";
@@ -197,7 +223,10 @@ export class SettingsTab extends PluginSettingTab {
 							rule.destinationPath = value;
 							await this.plugin.saveSettings();
 						});
-					new PathSuggest(this.app, text.inputEl, true);
+					new PathSuggest(this.app, text.inputEl, {
+						foldersOnly: false,
+						includeMdFiles: () => this.plugin.settings.includeMdFilesInSuggestions
+					});
 				})
 				.addButton(btn =>
 					btn
