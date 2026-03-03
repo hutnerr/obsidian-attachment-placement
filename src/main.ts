@@ -17,17 +17,22 @@ export default class AttachmentPlacementPlugin extends Plugin {
 			const original = vault.getAvailablePathForAttachments.bind(vault);
 
 			vault.getAvailablePathForAttachments = async (filename: string, extension: string, activeFile: TFile | null): Promise<string> => {
-				Clogger.debug(`getAvailablePathForAttachments called for: ${filename}.${extension}`, true);
-
 				const destinationFolder = await this.placementManager.getDestinationFolder(activeFile?.path);
 
 				if (destinationFolder) {
-					const fullPath = `${destinationFolder}/${filename}.${extension}`;
-					Clogger.debug(`Redirecting attachment to: ${fullPath}`, true);
-					return fullPath;
+					const base = `${destinationFolder}/${filename}`;
+					let candidate = `${base}.${extension}`;
+
+					let i = 1;
+					while (this.app.vault.getAbstractFileByPath(candidate) !== null) {
+						candidate = `${base} ${i}.${extension}`;
+						i++;
+					}
+
+					Clogger.debug(`Redirecting attachment to: ${candidate}`, true);
+					return candidate;
 				}
 
-				Clogger.debug("No destination found, using Obsidian default.", true);
 				return original(filename, extension, activeFile);
 			};
 
