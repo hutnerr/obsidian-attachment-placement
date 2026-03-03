@@ -110,7 +110,10 @@ export class PlacementManager {
 			await this.plugin.app.fileManager.renameFile(file, newPath);
 			Clogger.debug(`File moved successfully to ${newPath}`, true);
 		} catch (error) {
-			Clogger.error(`Error moving file: ${error}`, true);
+			Clogger.error(
+				`Error moving file: ${error instanceof Error ? error.message : String(error)}`,
+				true,
+			);
 		}
 	}
 }

@@ -14,12 +14,11 @@ export class ConfirmModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl("h3", { text: "Confirm Action" });
+		contentEl.createEl("h3", { text: "Confirm action" }); // sentence case
+
 		contentEl.createEl("p", { text: this.message });
 
-		const buttonContainer = contentEl.createDiv({
-			cls: "modal-button-container",
-		});
+		const buttonContainer = contentEl.createDiv({ cls: "modal-button-container" });
 
 		new ButtonComponent(buttonContainer)
 			.setButtonText("Cancel")

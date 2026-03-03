@@ -1,11 +1,7 @@
 import {
 	App,
-	AbstractInputSuggest,
-	TAbstractFile,
-	TFile,
 	PluginSettingTab,
 	Setting,
-	TFolder,
 	ButtonComponent,
 } from "obsidian";
 import AttachmentPlacementPlugin from "./main";
@@ -55,8 +51,8 @@ export class SettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		// GENERAL SETTINGS
-		containerEl.createEl("h2", { text: "Attachment Placement" });
+		// GENERAL SETTINGS — use setHeading() instead of createEl("h2")
+		new Setting(containerEl).setName("Attachment placement").setHeading();
 
 		new Setting(containerEl)
 			.setName("Fallback destination")
@@ -78,7 +74,7 @@ export class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Fallback Depth Limit")
+			.setName("Fallback depth limit") // sentence case
 			.setDesc(
 				"How many levels it will go up before giving up and using the fallback destination. " +
 					"Likely only useful if experiencing lag or for extremely nested folder structures. " +
@@ -114,7 +110,7 @@ export class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Include MD files in suggestions")
+			.setName("Include MD files in suggestions") // already sentence case
 			.setDesc(
 				"When enabled, MD files will be included in the suggestions for attachment placement. " +
 					"When disabled, only folders will be suggested. " +
@@ -131,7 +127,7 @@ export class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Reset Settings")
+			.setName("Reset settings") // sentence case
 			.setDesc(
 				"Reset all settings to their default values. This cannot be undone.",
 			)
@@ -143,17 +139,16 @@ export class SettingsTab extends PluginSettingTab {
 						new ConfirmModal(
 							this.app,
 							"Are you sure you want to reset all settings?",
-							async () => {
+							() => {
 								this.plugin.settings = { ...DEFAULT_SETTINGS };
-								await this.plugin.saveSettings();
-								this.display();
+								void this.plugin.saveSettings().then(() => this.display());
 							},
 						).open();
 					}),
 			);
 
 		new Setting(containerEl)
-			.setName("Clear All Rules")
+			.setName("Clear all rules") // sentence case
 			.setDesc("Delete all placement rules. This cannot be undone.")
 			.addButton((btn) =>
 				btn
@@ -163,24 +158,23 @@ export class SettingsTab extends PluginSettingTab {
 						new ConfirmModal(
 							this.app,
 							"Are you sure you want to delete all placement rules?",
-							async () => {
+							() => {
 								this.plugin.settings.rules = [];
-								await this.plugin.saveSettings();
-								this.display();
+								void this.plugin.saveSettings().then(() => this.display());
 							},
 						).open();
 					}),
 			);
 
-		// PLACEMENT RULES
-		containerEl.createEl("h3", { text: "Placement Rules" });
+		// PLACEMENT RULES — use setHeading() instead of createEl("h3")
+		new Setting(containerEl).setName("Placement rules").setHeading();
 
 		this.plugin.settings.rules.forEach((rule, i) => {
 			const rules = this.plugin.settings.rules;
 
 			const setting = new Setting(containerEl)
 				.addText((text) => {
-					text.inputEl.style.width = "150px";
+					text.inputEl.setCssProps({ width: "150px" });
 					text.setPlaceholder("Source")
 						.setValue(rule.sourcePath)
 						.onChange(async (value) => {
@@ -194,7 +188,7 @@ export class SettingsTab extends PluginSettingTab {
 					});
 				})
 				.addText((text) => {
-					text.inputEl.style.width = "150px";
+					text.inputEl.setCssProps({ width: "150px" });
 					text.setPlaceholder("Destination")
 						.setValue(rule.destinationPath)
 						.onChange(async (value) => {
@@ -211,55 +205,59 @@ export class SettingsTab extends PluginSettingTab {
 					btn
 						.setIcon("trash")
 						.setTooltip("Delete rule")
-						.onClick(async () => {
+						.onClick(() => {
 							rules.splice(i, 1);
-							await this.plugin.saveSettings();
-							this.display();
+							void this.plugin.saveSettings().then(() => this.display());
 						}),
 				);
 
+			// Drag handle — appended after controlEl so it sits rightmost
 			const handle = setting.settingEl.createEl("span", { text: "⠿" });
-			handle.style.cursor = "grab";
-			handle.style.color = "var(--text-muted)";
-			handle.style.padding = "0 8px";
-			handle.style.fontSize = "1.2em";
-			handle.style.flexShrink = "0";
+			handle.setCssProps({
+				cursor: "grab",
+				color: "var(--text-muted)",
+				padding: "0 8px",
+				"font-size": "1.2em",
+				"flex-shrink": "0",
+			});
 			setting.settingEl.draggable = true;
 
+			// Editable name in place of the setting label
 			setting.nameEl.empty();
 			const nameInput = setting.nameEl.createEl("input", {
 				type: "text",
 				placeholder: `Rule ${i + 1}`,
 			});
 			nameInput.value = rule.name;
-			nameInput.style.background = "var(--background-secondary)";
-			nameInput.style.border =
-				"1px solid var(--background-modifier-border-hover)";
-			nameInput.style.borderRadius = "var(--radius-s)";
-			nameInput.style.padding = "2px 6px";
-			nameInput.style.fontWeight = "var(--font-semibold)";
-			nameInput.style.fontSize = "var(--font-ui-medium)";
-			nameInput.style.color = "var(--text-normal)";
-			nameInput.style.width = "100%";
-			nameInput.addEventListener("change", async () => {
+			nameInput.setCssProps({
+				background: "var(--background-secondary)",
+				border: "1px solid var(--background-modifier-border-hover)",
+				"border-radius": "var(--radius-s)",
+				padding: "2px 6px",
+				"font-weight": "var(--font-semibold)",
+				"font-size": "var(--font-ui-medium)",
+				color: "var(--text-normal)",
+				width: "100%",
+			});
+			nameInput.addEventListener("change", () => {
 				rule.name = nameInput.value;
-				await this.plugin.saveSettings();
+				void this.plugin.saveSettings();
 			});
 
 			setting.settingEl.addEventListener("dragstart", (e) => {
 				e.dataTransfer?.setData("text/plain", String(i));
-				setting.settingEl.style.opacity = "0.4";
+				setting.settingEl.setCssProps({ opacity: "0.4" });
 			});
 
 			setting.settingEl.addEventListener("dragend", () => {
-				setting.settingEl.style.opacity = "1";
+				setting.settingEl.setCssProps({ opacity: "1" });
 			});
 
 			setting.settingEl.addEventListener("dragover", (e) => {
 				e.preventDefault();
 			});
 
-			setting.settingEl.addEventListener("drop", async (e) => {
+			setting.settingEl.addEventListener("drop", (e) => {
 				e.preventDefault();
 				const fromIndex = parseInt(
 					e.dataTransfer?.getData("text/plain") ?? "-1",
@@ -267,27 +265,28 @@ export class SettingsTab extends PluginSettingTab {
 				if (fromIndex === -1 || fromIndex === i) return;
 				const moved = rules.splice(fromIndex, 1)[0]!;
 				rules.splice(i, 0, moved);
-				await this.plugin.saveSettings();
-				this.display();
+				void this.plugin.saveSettings().then(() => this.display());
 			});
 		});
 
+		// Add rule button — plain div so Obsidian doesn't collapse it
 		const addButtonContainer = containerEl.createDiv();
-		addButtonContainer.style.display = "flex";
-		addButtonContainer.style.justifyContent = "flex-start";
-		addButtonContainer.style.padding = "6px 0";
+		addButtonContainer.setCssProps({
+			display: "flex",
+			"justify-content": "flex-start",
+			padding: "6px 0",
+		});
 		new ButtonComponent(addButtonContainer)
-			.setButtonText("+ Add Rule")
+			.setButtonText("+ Add rule") // sentence case
 			.setCta()
-			.onClick(async () => {
+			.onClick(() => {
 				this.plugin.settings.rules.push({
 					id: generateId(),
 					name: "",
 					sourcePath: "",
 					destinationPath: "",
 				});
-				await this.plugin.saveSettings();
-				this.display();
+				void this.plugin.saveSettings().then(() => this.display());
 			});
 	}
 }
