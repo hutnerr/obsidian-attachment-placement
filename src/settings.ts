@@ -22,7 +22,7 @@ export interface Settings {
 	fallbackPath: string;
 	fallbackDepthLimit?: number;
 	notificationsEnabled: boolean;
-	includeMdFilesInSuggestions: boolean;
+	// includeMdFilesInSuggestions: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,7 +30,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	fallbackPath: "",
 	fallbackDepthLimit: undefined,
 	notificationsEnabled: true,
-	includeMdFilesInSuggestions: false,
+	// includeMdFilesInSuggestions: false,
 };
 
 function generateId(): string {
@@ -97,7 +97,8 @@ export class SettingsTab extends PluginSettingTab {
 				new PathSuggest(this.app, text.inputEl, {
 					foldersOnly: true,
 					includeMdFiles: () =>
-						this.plugin.settings.includeMdFilesInSuggestions,
+						// this.plugin.settings.includeMdFilesInSuggestions,
+						false,
 				});
 			});
 
@@ -135,22 +136,22 @@ export class SettingsTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(containerEl)
-			.setName("Include md files in source suggestions")
-			.setDesc(
-				"When enabled, MD files will be included in the suggestions for attachment placement. " +
-					"When disabled, only folders will be suggested. " +
-					"This only affects the suggestions and does not prevent you from manually entering a file path.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.includeMdFilesInSuggestions)
-					.onChange(async (value) => {
-						this.plugin.settings.includeMdFilesInSuggestions =
-							value;
-						await this.plugin.saveSettings();
-					});
-			});
+		// new Setting(containerEl)
+		// 	.setName("Include md files in source suggestions")
+		// 	.setDesc(
+		// 		"When enabled, MD files will be included in the suggestions for attachment placement. " +
+		// 			"When disabled, only folders will be suggested. " +
+		// 			"This only affects the suggestions and does not prevent you from manually entering a file path.",
+		// 	)
+		// 	.addToggle((toggle) => {
+		// 		toggle
+		// 			.setValue(this.plugin.settings.includeMdFilesInSuggestions)
+		// 			.onChange(async (value) => {
+		// 				this.plugin.settings.includeMdFilesInSuggestions =
+		// 					value;
+		// 				await this.plugin.saveSettings();
+		// 			});
+		// 	});
 
 		new Setting(containerEl)
 			.setName("Reset settings")
@@ -224,7 +225,8 @@ export class SettingsTab extends PluginSettingTab {
 					new PathSuggest(this.app, text.inputEl, {
 						foldersOnly: false,
 						includeMdFiles: () =>
-							this.plugin.settings.includeMdFilesInSuggestions,
+							// this.plugin.settings.includeMdFilesInSuggestions,
+							false,
 					});
 				})
 				.addText((text) => {

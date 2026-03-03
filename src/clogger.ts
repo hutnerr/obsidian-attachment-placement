@@ -14,11 +14,7 @@ export class Clogger {
 		return "";
 	}
 
-	private static _log(
-		tag: string,
-		msg: string,
-		alert: boolean = false,
-	): void {
+	private static _log(tag: string, msg: string, alert: boolean = false): void {
 		if (Clogger.disabled) return;
 
 		const timestamp = Clogger._getTimestamp();
