@@ -13,7 +13,6 @@ export default class AttachmentPlacementPlugin extends Plugin {
 			this.placementManager = new PlacementManager(this);
 			this.addSettingTab(new SettingsTab(this.app, this));
 
-			// override the built-in attachment path placmeent
 			const vault = this.app.vault as any;
 			const original = vault.getAvailablePathForAttachments.bind(vault);
 
@@ -23,9 +22,8 @@ export default class AttachmentPlacementPlugin extends Plugin {
 				const destinationFolder = await this.placementManager.getDestinationFolder(activeFile?.path);
 
 				if (destinationFolder) {
-					const folder = destinationFolder.endsWith("/") ? destinationFolder : `${destinationFolder}/`;
 					const fullPath = `${destinationFolder}/${filename}.${extension}`;
-					Clogger.debug(`Redirecting attachment to: ${fullPath}`,true);
+					Clogger.debug(`Redirecting attachment to: ${fullPath}`, true);
 					return fullPath;
 				}
 
@@ -38,10 +36,8 @@ export default class AttachmentPlacementPlugin extends Plugin {
 	}
 
 	onunload(): void {
-		// to clean up we want to restore the original method
 		Clogger.debug("Unloading AttachmentPlacementPlugin...", true);
 		delete (this.app.vault as any).getAvailablePathForAttachments;
-		
 		Clogger.debug("AttachmentPlacementPlugin unloaded successfully.", true);
 	}
 
@@ -54,6 +50,7 @@ export default class AttachmentPlacementPlugin extends Plugin {
 	async saveSettings(): Promise<void> {
 		Clogger.debug("Saving settings...");
 		await this.saveData(this.settings);
+		this.placementManager?.rebuildRuleMap();
 		Clogger.debug("Settings saved: " + JSON.stringify(this.settings));
 	}
 }

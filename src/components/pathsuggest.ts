@@ -1,10 +1,4 @@
-import {
-	App,
-	AbstractInputSuggest,
-	TAbstractFile,
-	TFile,
-	TFolder,
-} from "obsidian";
+import { App, AbstractInputSuggest, TAbstractFile, TFile, TFolder } from "obsidian";
 
 export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
 	constructor(

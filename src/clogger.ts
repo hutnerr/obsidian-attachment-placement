@@ -1,7 +1,7 @@
 import { Notice } from "obsidian";
 
 export class Clogger {
-	static debugEnabled: boolean = true;
+	static debugEnabled: boolean = false;
 	static disabled: boolean = false;
 	static disableNotifications: boolean = true;
 	static useTimestamps: boolean = false;
@@ -40,9 +40,7 @@ export class Clogger {
 	}
 
 	static debug(msg: string, alert: boolean = false): void {
-		if (Clogger.debugEnabled) {
-			Clogger._log("[DEBUG]", msg, alert);
-		}
+		if (Clogger.debugEnabled)  Clogger._log("[DEBUG]", msg, alert);
 	}
 
 	static action(msg: string, alert: boolean = false): void {

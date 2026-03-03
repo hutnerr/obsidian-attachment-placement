@@ -4,64 +4,94 @@ import { Notice } from "obsidian";
 
 export class PlacementManager {
 	plugin: AttachmentPlacementPlugin;
+	private ruleMap: Map<string, string> = new Map();
+	private destinationCache: Map<string, string | null> = new Map();
 
 	constructor(plugin: AttachmentPlacementPlugin) {
 		this.plugin = plugin;
 		Clogger.debug("Initializing PlacementManager...", true);
+		this.rebuildRuleMap();
+
+		// invalidate cache when folders are created or deleted
+		this.plugin.registerEvent(
+			this.plugin.app.vault.on("create", () => this.destinationCache.clear())
+		);
+		this.plugin.registerEvent(
+			this.plugin.app.vault.on("delete", () => this.destinationCache.clear())
+		);
+		this.plugin.registerEvent(
+			this.plugin.app.vault.on("rename", () => this.destinationCache.clear())
+		);
+	}
+
+	rebuildRuleMap(): void {
+		this.ruleMap = new Map(
+			this.plugin.settings.rules.map((rule) => [
+				rule.sourcePath.replace(/\/$/, ""),
+				rule.destinationPath,
+			]),
+		);
+		this.destinationCache.clear();
+		Clogger.debug(`Rule map rebuilt with ${this.ruleMap.size} entries, cache cleared.`, true);
 	}
 
 	async getDestinationFolder(activePath: string | undefined): Promise<string | null> {
+		const cacheKey = activePath ?? "__fallback__";
+
+		if (this.destinationCache.has(cacheKey)) {
+			Clogger.debug(`Cache hit for: ${cacheKey}`, true);
+			return this.destinationCache.get(cacheKey)!;
+		}
+
+		const result = this._resolveDestination(activePath);
+		this.destinationCache.set(cacheKey, result);
+		return result;
+	}
+
+	private _resolveDestination(activePath: string | undefined): string | null {
 		if (!activePath) {
 			Clogger.debug("No active path provided.", true);
-			return await this._validateFolder(this.plugin.settings.fallbackPath ?? null);
+			return this._validateFolder(this.plugin.settings.fallbackPath ?? null);
 		}
 
 		let limit = this.plugin.settings.fallbackDepthLimit ?? 99;
-		let parentFolder = await this._goUpOneLevel(activePath);
+		let parentFolder = this._goUpOneLevel(activePath);
 
 		while (parentFolder !== "" && limit > 0) {
-			const placementPath = await this._findPlacementRule(parentFolder);
+			const placementPath = this._findPlacementRule(parentFolder);
 			if (placementPath) {
 				Clogger.debug(`Found placement path: ${placementPath}`, true);
-				return await this._validateFolder(placementPath);
+				return this._validateFolder(placementPath);
 			}
 			limit--;
-			parentFolder = await this._goUpOneLevel(parentFolder);
+			parentFolder = this._goUpOneLevel(parentFolder);
 		}
 
-		return await this._validateFolder(this.plugin.settings.fallbackPath ?? null);
+		return this._validateFolder(this.plugin.settings.fallbackPath ?? null);
 	}
 
-	async _goUpOneLevel(path: string): Promise<string> {
-		const trimmed = path.replace(/\/$/, "");
-		const parts = trimmed.split("/");
+	_goUpOneLevel(path: string): string {
+		const parts = path.replace(/\/$/, "").split("/");
 		parts.pop();
 		return parts.join("/");
 	}
 
-	async _findPlacementRule(folderPath: string): Promise<string | null> {
-		Clogger.debug(`Finding placement rule for folder: ${folderPath}`, true);
-		const rules = this.plugin.settings.rules;
-		for (const rule of rules) {
-			const normalizedRule = rule.sourcePath.replace(/\/$/, "");
-			const normalizedFolder = folderPath.replace(/\/$/, "");
-			if (normalizedFolder === normalizedRule) {
-				Clogger.debug(
-					`Found matching rule: ${rule.sourcePath} -> ${rule.destinationPath}`,
-					true,
-				);
-				return rule.destinationPath; // return as-is, _validateFolder will strip it
-			}
+	_findPlacementRule(folderPath: string): string | null {
+		const normalized = folderPath.replace(/\/$/, "");
+		const destination = this.ruleMap.get(normalized);
+		if (destination !== undefined) {
+			Clogger.debug(`Found matching rule: ${normalized} -> ${destination}`, true);
+			return destination;
 		}
 		return null;
 	}
 
-	async _validateFolder(folderPath: string | null): Promise<string | null> {
+	_validateFolder(folderPath: string | null): string | null {
 		if (!folderPath) return null;
-		
+
 		const normalized = folderPath.replace(/\/$/, "");
 		const exists = this.plugin.app.vault.getAbstractFileByPath(normalized) !== null;
-		
+
 		if (!exists) {
 			Clogger.error(`Destination folder does not exist: ${normalized}`, false);
 			if (this.plugin.settings.notificationsEnabled) {
@@ -72,8 +102,7 @@ export class PlacementManager {
 		return normalized;
 	}
 
-	async _folderExists(folderPath: string): Promise<boolean> {
-    	const folder = this.plugin.app.vault.getAbstractFileByPath(folderPath);
-    	return folder !== null;
+	_folderExists(folderPath: string): boolean {
+		return this.plugin.app.vault.getAbstractFileByPath(folderPath) !== null;
 	}
 }

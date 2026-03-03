@@ -13,9 +13,8 @@ export class ConfirmModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
-
+		
 		contentEl.createEl("h3", { text: "Confirm action" });
-
 		contentEl.createEl("p", { text: this.message });
 
 		const buttonContainer = contentEl.createDiv({ cls: "modal-button-container" });

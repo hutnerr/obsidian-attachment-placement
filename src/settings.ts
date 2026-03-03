@@ -1,10 +1,4 @@
-import {
-	App,
-	PluginSettingTab,
-	Setting,
-	ButtonComponent,
-	Notice,
-} from "obsidian";
+import { App, PluginSettingTab, Setting, ButtonComponent } from "obsidian";
 import AttachmentPlacementPlugin from "./main";
 import { Clogger } from "clogger";
 import { ConfirmModal } from "./components/confirm";
@@ -22,7 +16,6 @@ export interface Settings {
 	fallbackPath: string;
 	fallbackDepthLimit?: number;
 	notificationsEnabled: boolean;
-	// includeMdFilesInSuggestions: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,7 +23,6 @@ export const DEFAULT_SETTINGS: Settings = {
 	fallbackPath: "",
 	fallbackDepthLimit: undefined,
 	notificationsEnabled: true,
-	// includeMdFilesInSuggestions: false,
 };
 
 function generateId(): string {
@@ -62,19 +54,12 @@ export class SettingsTab extends PluginSettingTab {
 						this.plugin.settings.fallbackPath = value;
 						await this.plugin.saveSettings();
 					});
-				new PathSuggest(this.app, text.inputEl, {
-					foldersOnly: true,
-					includeMdFiles: () =>
-						// this.plugin.settings.includeMdFilesInSuggestions,
-						false,
-				});
+				new PathSuggest(this.app, text.inputEl, {foldersOnly: true, includeMdFiles: () => false,});
 			});
 
 		new Setting(containerEl)
 			.setName("Fallback depth limit")
-			.setDesc(
-				"How many levels it will go up before giving up and using the fallback destination. Likely only useful if experiencing lag or for extremely nested folder structures. Leave empty for no limit.",
-			)
+			.setDesc("How many levels it will go up before giving up and using the fallback destination. Likely only useful if experiencing lag or for extremely nested folder structures. Leave empty for no limit.",)
 			.addText((text) => {
 				text.setPlaceholder("E.g. 5")
 					.setValue(
@@ -92,9 +77,7 @@ export class SettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Notifications")
-			.setDesc(
-				"Enable or disable notifications for attachment placement actions.",
-			)
+			.setDesc("Enable or disable notifications for attachment placement actions.",)
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.notificationsEnabled)
@@ -104,28 +87,9 @@ export class SettingsTab extends PluginSettingTab {
 					});
 			});
 
-		// new Setting(containerEl)
-		// 	.setName("Include md files in source suggestions")
-		// 	.setDesc(
-		// 		"When enabled, MD files will be included in the suggestions for attachment placement. " +
-		// 			"When disabled, only folders will be suggested. " +
-		// 			"This only affects the suggestions and does not prevent you from manually entering a file path.",
-		// 	)
-		// 	.addToggle((toggle) => {
-		// 		toggle
-		// 			.setValue(this.plugin.settings.includeMdFilesInSuggestions)
-		// 			.onChange(async (value) => {
-		// 				this.plugin.settings.includeMdFilesInSuggestions =
-		// 					value;
-		// 				await this.plugin.saveSettings();
-		// 			});
-		// 	});
-
 		new Setting(containerEl)
 			.setName("Reset settings")
-			.setDesc(
-				"Reset all settings to their default values. This cannot be undone.",
-			)
+			.setDesc("Reset all settings to their default values. This cannot be undone.",)
 			.addButton((btn) =>
 				btn
 					.setButtonText("Reset")
@@ -190,12 +154,7 @@ export class SettingsTab extends PluginSettingTab {
 							rule.sourcePath = value;
 							await this.plugin.saveSettings();
 						});
-					new PathSuggest(this.app, text.inputEl, {
-						foldersOnly: false,
-						includeMdFiles: () =>
-							// this.plugin.settings.includeMdFilesInSuggestions,
-							false,
-					});
+					new PathSuggest(this.app, text.inputEl, { foldersOnly: false, includeMdFiles: () => false,});
 				})
 				.addText((text) => {
 					text.inputEl.setCssProps({ width: "110px" });
@@ -205,10 +164,7 @@ export class SettingsTab extends PluginSettingTab {
 							rule.destinationPath = value;
 							await this.plugin.saveSettings();
 						});
-					new PathSuggest(this.app, text.inputEl, {
-						foldersOnly: true,
-						includeMdFiles: () => false, // destination must be a folder
-					});
+					new PathSuggest(this.app, text.inputEl, { foldersOnly: true, includeMdFiles: () => false, });
 				})
 				.addButton((btn) =>
 					btn
