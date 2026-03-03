@@ -256,7 +256,7 @@ export class SettingsTab extends PluginSettingTab {
 		});
 
 		const link = supportContainer.createEl("a", {
-			text: "Support me on Ko-fi",
+			text: "Support me on ko-fi",
 			href: "https://ko-fi.com/hutner",
 		});
 

@@ -1,7 +1,13 @@
-import { Plugin, TFile } from "obsidian";
+import { Plugin, TFile, Vault } from "obsidian";
 import { DEFAULT_SETTINGS, Settings, SettingsTab } from "./settings";
 import { Clogger } from "clogger";
 import { PlacementManager } from "./placement";
+
+type AttachmentPathFn = (filename: string, extension: string, activeFile: TFile | null) => Promise<string>;
+
+interface VaultWithAttachmentPath extends Vault {
+	getAvailablePathForAttachments?: AttachmentPathFn;
+}
 
 export default class AttachmentPlacementPlugin extends Plugin {
 	settings: Settings;
@@ -13,13 +19,13 @@ export default class AttachmentPlacementPlugin extends Plugin {
 			this.placementManager = new PlacementManager(this);
 			this.addSettingTab(new SettingsTab(this.app, this));
 
-			const vault = this.app.vault as any;
-			const original = vault.getAvailablePathForAttachments.bind(vault);
+			const vault = this.app.vault as VaultWithAttachmentPath;
+			const original = vault.getAvailablePathForAttachments!.bind(vault);
 
 			vault.getAvailablePathForAttachments = async (filename: string, extension: string, activeFile: TFile | null): Promise<string> => {
 				const destinationFolder = await this.placementManager.getDestinationFolder(activeFile?.path);
 
-				if (destinationFolder) {
+				if (destinationFolder !== null) {
 					const base = destinationFolder ? `${destinationFolder}/${filename}` : filename;
 					let candidate = `${base}.${extension}`;
 
@@ -42,7 +48,7 @@ export default class AttachmentPlacementPlugin extends Plugin {
 
 	onunload(): void {
 		Clogger.debug("Unloading AttachmentPlacementPlugin...", true);
-		delete (this.app.vault as any).getAvailablePathForAttachments;
+		delete (this.app.vault as VaultWithAttachmentPath).getAvailablePathForAttachments;
 		Clogger.debug("AttachmentPlacementPlugin unloaded successfully.", true);
 	}
 
