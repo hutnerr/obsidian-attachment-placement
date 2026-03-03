@@ -1,15 +1,15 @@
 ## Overview
 This plugin is meant to make resource placement more flexible and context-aware.
 
-Instead of forcing all resources into a single hardcoded folder, it lets you define where resources should go based on the file or folder you’re currently working in. The plugin will walk up the directory tree and use the first placement rule it finds.
+Instead of forcing all new resources into a single hardcoded folder, it lets you define where resources should go based on the file or folder you’re currently working in. The plugin will walk up the directory tree and use the first placement rule it finds.
 
-This project is still in the planning and early development stage and should be considered a work in progress.
+This plugin would likely be useful for people who like to copy-paste in images and would like some further organization.
 
 ## Core Concept
-Placement rules can be defined on individual files or folders.
+Placement rules can be defined on individual folders.
 
-When a resource is added:
-1. The plugin checks if the current file has a placement rule.
+When a new resource is created:
+1. The plugin checks if the current folder has a placement rule.
 2. If not, it checks the parent folder.
 3. This continues upward until a rule is found.
 4. The resource is placed according to that rule.
@@ -19,16 +19,32 @@ This keeps resource organization local when needed, while still allowing higher-
 ## Example
 Given the following structure:
 
-games/<br/>
-└── league.md
+```
+/
+├── attachments/
+│   ├── school/
+│   ├── journal/
+│   └── videogames/
+│
+├── school/
+│   └── math/
+│       ├── factoring.md
+│       └── addition.md
+│
+├── journal/
+├── league-of-legends/
+└── dragon-age-origins/
+```
 
-If `league.md` defines a placement rule, related resources will be placed there.
+If we are working within `addition.md`, we will check its parent folder (`math/`) for a placement rule, if it exists, related resources will be placed using that rule.
 
-If it does not, the plugin will check:
-- `games/`
-- then the project root
+If it does not exist, we will check the next parent (`school/`). We continue this parent checking sequence until we hit a rule that we can use or hit the root folder.
 
-This allows very specific behavior where you want it, without breaking organization elsewhere.
+If no rule is found, the plugin uses the fallback location defined in settings.
+
+## Future Roadmap
+1. Allow sources to be `.md` files for even finer control.
+2. Option to parse and re-sort through all attachments in specific folders
 
 ## Support
 If you found this project helpful or enjoyable, and want to support future work, you can buy me a coffee on Ko-fi
