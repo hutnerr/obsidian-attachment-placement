@@ -52,38 +52,6 @@ export class SettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		const attachmentPath = (this.app.vault as any).getConfig(
-			"attachmentFolderPath",
-		) as string;
-
-		if (attachmentPath !== "./") {
-			const setting = new Setting(containerEl)
-				.setName("⚠ Attachment folder setting is incorrect ⚠")
-				.setDesc(
-					'This plugin requires "Default location for new attachments" to be set to "Same folder as current file".',
-				);
-
-			setting.settingEl.addClass("mod-warning");
-
-			setting.addButton((btn) =>
-				btn
-					.setButtonText("Fix automatically")
-					.setWarning() // makes button red
-					.onClick(async () => {
-						await (this.app.vault as any).setConfig(
-							"attachmentFolderPath",
-							"./",
-						);
-
-						new Notice(
-							"Attachment folder set to 'Same folder as current file'.",
-						);
-
-						this.display(); // refresh settings UI
-					}),
-			);
-		}
-
 		new Setting(containerEl)
 			.setName("Fallback destination")
 			.setDesc("Used when no rule matches.")
