@@ -1,9 +1,21 @@
-import { App, AbstractInputSuggest, TAbstractFile, TFile, PluginSettingTab, Setting, TFolder } from "obsidian";
+import {
+	App,
+	AbstractInputSuggest,
+	TAbstractFile,
+	TFile,
+	PluginSettingTab,
+	Setting,
+	TFolder,
+	ButtonComponent,
+} from "obsidian";
 import AttachmentPlacementPlugin from "./main";
 import { Clogger } from "clogger";
+import { ConfirmModal } from "./components/confirm";
+import { PathSuggest } from "./components/pathsuggest";
 
 export interface PlacementRule {
 	id: string;
+	name: string;
 	sourcePath: string;
 	destinationPath: string;
 }
@@ -28,63 +40,6 @@ function generateId(): string {
 	return Math.random().toString(36).slice(2, 10);
 }
 
-
-
-export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
-	constructor(
-		app: App,
-		private inputEl: HTMLInputElement,
-		private options: {
-			foldersOnly: boolean;
-			includeMdFiles: () => boolean;
-		}
-	) {
-		super(app, inputEl);
-	}
-
-	getSuggestions(query: string): TAbstractFile[] {
-		const lower = query.toLowerCase();
-
-		return this.app.vault.getAllLoadedFiles()
-			.filter(file => {
-				if (!file.path.toLowerCase().includes(lower)) return false;
-
-				// Folder-only mode
-				if (this.options.foldersOnly) {
-					return file instanceof TFolder;
-				}
-
-				// Always allow folders
-				if (file instanceof TFolder) return true;
-
-				// Handle files
-				if (file instanceof TFile) {
-					// Only allow MD files when enabled
-					if (this.options.includeMdFiles()) {
-						return file.extension === "md";
-					}
-
-					// If MD not included → no files allowed
-					return false;
-				}
-
-				return false;
-			})
-			.slice(0, 50);
-	}
-
-	renderSuggestion(file: TAbstractFile, el: HTMLElement) {
-		el.createEl("div", { text: file.path });
-	}
-
-	selectSuggestion(file: TAbstractFile) {
-		const value = file instanceof TFolder ? file.path + "/" : file.path;
-		this.inputEl.value = value;
-		this.inputEl.trigger("input");
-		this.close();
-	}
-}
-
 export class SettingsTab extends PluginSettingTab {
 	plugin: AttachmentPlacementPlugin;
 
@@ -94,7 +49,7 @@ export class SettingsTab extends PluginSettingTab {
 		Clogger.debug("Initializing settings tab...", true);
 	}
 
-	hide() { }
+	hide() {}
 
 	display(): void {
 		const { containerEl } = this;
@@ -105,18 +60,20 @@ export class SettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Fallback destination")
-			.setDesc("Used when no rule matches. Leave empty to use Obsidian's default.")
-			.addText(text => {
-				text
-					.setPlaceholder("e.g. assets/")
+			.setDesc(
+				"Used when no rule matches. Leave empty to use Obsidian's default.",
+			)
+			.addText((text) => {
+				text.setPlaceholder("e.g. assets/")
 					.setValue(this.plugin.settings.fallbackPath)
-					.onChange(async value => {
+					.onChange(async (value) => {
 						this.plugin.settings.fallbackPath = value;
 						await this.plugin.saveSettings();
 					});
 				new PathSuggest(this.app, text.inputEl, {
 					foldersOnly: true,
-					includeMdFiles: () => this.plugin.settings.includeMdFilesInSuggestions
+					includeMdFiles: () =>
+						this.plugin.settings.includeMdFilesInSuggestions,
 				});
 			});
 
@@ -124,132 +81,213 @@ export class SettingsTab extends PluginSettingTab {
 			.setName("Fallback Depth Limit")
 			.setDesc(
 				"How many levels it will go up before giving up and using the fallback destination. " +
-				"Likely only useful if experiencing lag or for extremely nested folder structures. " +
-				"Leave empty for no limit."
+					"Likely only useful if experiencing lag or for extremely nested folder structures. " +
+					"Leave empty for no limit.",
 			)
-			.addText(text => {
-				text
-					.setPlaceholder("e.g. 5")
-					.setValue(this.plugin.settings.fallbackDepthLimit?.toString() ?? "")
-					.onChange(async value => {
+			.addText((text) => {
+				text.setPlaceholder("e.g. 5")
+					.setValue(
+						this.plugin.settings.fallbackDepthLimit?.toString() ??
+							"",
+					)
+					.onChange(async (value) => {
 						const num = parseInt(value);
-						this.plugin.settings.fallbackDepthLimit = isNaN(num) ? undefined : num;
+						this.plugin.settings.fallbackDepthLimit = isNaN(num)
+							? undefined
+							: num;
 						await this.plugin.saveSettings();
 					});
 			});
 
 		new Setting(containerEl)
 			.setName("Notifications")
-			.setDesc("Enable or disable notifications for attachment placement actions.")
-			.addToggle(toggle => {
-				toggle.setValue(this.plugin.settings.notificationsEnabled).onChange(async value => {
-					this.plugin.settings.notificationsEnabled = value;
-					await this.plugin.saveSettings();
-				});
+			.setDesc(
+				"Enable or disable notifications for attachment placement actions.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.notificationsEnabled)
+					.onChange(async (value) => {
+						this.plugin.settings.notificationsEnabled = value;
+						await this.plugin.saveSettings();
+					});
 			});
 
 		new Setting(containerEl)
 			.setName("Include MD files in suggestions")
 			.setDesc(
 				"When enabled, MD files will be included in the suggestions for attachment placement. " +
-				"When disabled, only folders will be suggested. " +
-				"This only affects the suggestions and does not prevent you from manually entering a file path."
+					"When disabled, only folders will be suggested. " +
+					"This only affects the suggestions and does not prevent you from manually entering a file path.",
 			)
-			.addToggle(toggle => {
-				toggle.setValue(this.plugin.settings.includeMdFilesInSuggestions).onChange(async value => {
-					this.plugin.settings.includeMdFilesInSuggestions = value;
-					await this.plugin.saveSettings();
-				});
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.includeMdFilesInSuggestions)
+					.onChange(async (value) => {
+						this.plugin.settings.includeMdFilesInSuggestions =
+							value;
+						await this.plugin.saveSettings();
+					});
 			});
 
 		new Setting(containerEl)
 			.setName("Reset Settings")
-			.setDesc("Reset all settings to their default values. This cannot be undone.")
-			.addButton(btn =>
+			.setDesc(
+				"Reset all settings to their default values. This cannot be undone.",
+			)
+			.addButton((btn) =>
 				btn
-					.setButtonText("Reset Defaults")
+					.setButtonText("Reset")
 					.setWarning()
-					.onClick(async () => {
-						if (confirm("Are you sure you want to reset all settings?")) {
-							this.plugin.settings = DEFAULT_SETTINGS;
-							await this.plugin.saveSettings();
-							this.display();
-						}
-					})
+					.onClick(() => {
+						new ConfirmModal(
+							this.app,
+							"Are you sure you want to reset all settings?",
+							async () => {
+								this.plugin.settings = { ...DEFAULT_SETTINGS };
+								await this.plugin.saveSettings();
+								this.display();
+							},
+						).open();
+					}),
 			);
 
 		new Setting(containerEl)
 			.setName("Clear All Rules")
 			.setDesc("Delete all placement rules. This cannot be undone.")
-			.addButton(btn =>
+			.addButton((btn) =>
 				btn
-					.setButtonText("Clear Rules")
+					.setButtonText("Clear")
 					.setWarning()
-					.onClick(async () => {
-						if (confirm("Are you sure you want to delete all placement rules?")) {
-							this.plugin.settings.rules = [];
-							await this.plugin.saveSettings();
-							this.display();
-						}
-					})
+					.onClick(() => {
+						new ConfirmModal(
+							this.app,
+							"Are you sure you want to delete all placement rules?",
+							async () => {
+								this.plugin.settings.rules = [];
+								await this.plugin.saveSettings();
+								this.display();
+							},
+						).open();
+					}),
 			);
 
 		// PLACEMENT RULES
 		containerEl.createEl("h3", { text: "Placement Rules" });
 
 		this.plugin.settings.rules.forEach((rule, i) => {
-			new Setting(containerEl)
-				.setName(`Rule ${i + 1}`)
-				.addText(text => {
-					text.inputEl.style.width = "180px";
-					text
-						.setPlaceholder("Source (file or folder)")
+			const rules = this.plugin.settings.rules;
+
+			const setting = new Setting(containerEl)
+				.addText((text) => {
+					text.inputEl.style.width = "150px";
+					text.setPlaceholder("Source")
 						.setValue(rule.sourcePath)
-						.onChange(async value => {
+						.onChange(async (value) => {
 							rule.sourcePath = value;
 							await this.plugin.saveSettings();
 						});
 					new PathSuggest(this.app, text.inputEl, {
 						foldersOnly: false,
-						includeMdFiles: () => this.plugin.settings.includeMdFilesInSuggestions
+						includeMdFiles: () =>
+							this.plugin.settings.includeMdFilesInSuggestions,
 					});
 				})
-				.addText(text => {
-					text.inputEl.style.width = "180px";
-					text
-						.setPlaceholder("Destination folder")
+				.addText((text) => {
+					text.inputEl.style.width = "150px";
+					text.setPlaceholder("Destination")
 						.setValue(rule.destinationPath)
-						.onChange(async value => {
+						.onChange(async (value) => {
 							rule.destinationPath = value;
 							await this.plugin.saveSettings();
 						});
 					new PathSuggest(this.app, text.inputEl, {
 						foldersOnly: false,
-						includeMdFiles: () => this.plugin.settings.includeMdFilesInSuggestions
+						includeMdFiles: () =>
+							this.plugin.settings.includeMdFilesInSuggestions,
 					});
 				})
-				.addButton(btn =>
+				.addButton((btn) =>
 					btn
 						.setIcon("trash")
 						.setTooltip("Delete rule")
 						.onClick(async () => {
-							this.plugin.settings.rules.splice(i, 1);
+							rules.splice(i, 1);
 							await this.plugin.saveSettings();
 							this.display();
-						})
+						}),
 				);
+
+			const handle = setting.settingEl.createEl("span", { text: "⠿" });
+			handle.style.cursor = "grab";
+			handle.style.color = "var(--text-muted)";
+			handle.style.padding = "0 8px";
+			handle.style.fontSize = "1.2em";
+			handle.style.flexShrink = "0";
+			setting.settingEl.draggable = true;
+
+			setting.nameEl.empty();
+			const nameInput = setting.nameEl.createEl("input", {
+				type: "text",
+				placeholder: `Rule ${i + 1}`,
+			});
+			nameInput.value = rule.name;
+			nameInput.style.background = "var(--background-secondary)";
+			nameInput.style.border =
+				"1px solid var(--background-modifier-border-hover)";
+			nameInput.style.borderRadius = "var(--radius-s)";
+			nameInput.style.padding = "2px 6px";
+			nameInput.style.fontWeight = "var(--font-semibold)";
+			nameInput.style.fontSize = "var(--font-ui-medium)";
+			nameInput.style.color = "var(--text-normal)";
+			nameInput.style.width = "100%";
+			nameInput.addEventListener("change", async () => {
+				rule.name = nameInput.value;
+				await this.plugin.saveSettings();
+			});
+
+			setting.settingEl.addEventListener("dragstart", (e) => {
+				e.dataTransfer?.setData("text/plain", String(i));
+				setting.settingEl.style.opacity = "0.4";
+			});
+
+			setting.settingEl.addEventListener("dragend", () => {
+				setting.settingEl.style.opacity = "1";
+			});
+
+			setting.settingEl.addEventListener("dragover", (e) => {
+				e.preventDefault();
+			});
+
+			setting.settingEl.addEventListener("drop", async (e) => {
+				e.preventDefault();
+				const fromIndex = parseInt(
+					e.dataTransfer?.getData("text/plain") ?? "-1",
+				);
+				if (fromIndex === -1 || fromIndex === i) return;
+				const moved = rules.splice(fromIndex, 1)[0]!;
+				rules.splice(i, 0, moved);
+				await this.plugin.saveSettings();
+				this.display();
+			});
 		});
 
-		new Setting(containerEl)
-			.addButton(btn =>
-				btn
-					.setButtonText("+ Add Rule")
-					.setCta()
-					.onClick(async () => {
-						this.plugin.settings.rules.push({ id: generateId(), sourcePath: "", destinationPath: "" });
-						await this.plugin.saveSettings();
-						this.display();
-					})
-			);
+		const addButtonContainer = containerEl.createDiv();
+		addButtonContainer.style.display = "flex";
+		addButtonContainer.style.justifyContent = "flex-start";
+		addButtonContainer.style.padding = "6px 0";
+		new ButtonComponent(addButtonContainer)
+			.setButtonText("+ Add Rule")
+			.setCta()
+			.onClick(async () => {
+				this.plugin.settings.rules.push({
+					id: generateId(),
+					name: "",
+					sourcePath: "",
+					destinationPath: "",
+				});
+				await this.plugin.saveSettings();
+				this.display();
+			});
 	}
 }
