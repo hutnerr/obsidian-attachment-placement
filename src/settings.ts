@@ -46,8 +46,6 @@ export class SettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		// new Setting(containerEl).setName("Main Settings").setHeading();
-
 		new Setting(containerEl)
 			.setName("Fallback destination")
 			.setDesc("Used when no rule matches.")
@@ -100,7 +98,7 @@ export class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Include md files in source suggestions") // already sentence case
+			.setName("Include md files in source suggestions")
 			.setDesc(
 				"When enabled, MD files will be included in the suggestions for attachment placement. " +
 					"When disabled, only folders will be suggested. " +
@@ -117,7 +115,7 @@ export class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Reset settings") // sentence case
+			.setName("Reset settings")
 			.setDesc(
 				"Reset all settings to their default values. This cannot be undone.",
 			)
@@ -140,7 +138,7 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Clear all rules") // sentence case
+			.setName("Clear all rules")
 			.setDesc("Delete all placement rules. This cannot be undone.")
 			.addButton((btn) =>
 				btn
@@ -160,15 +158,25 @@ export class SettingsTab extends PluginSettingTab {
 					}),
 			);
 
-		// PLACEMENT RULES — use setHeading() instead of createEl("h3")
+		// PLACEMENT RULES
 		new Setting(containerEl).setName("Placement rules").setHeading();
 
 		this.plugin.settings.rules.forEach((rule, i) => {
 			const rules = this.plugin.settings.rules;
 
 			const setting = new Setting(containerEl)
+				.setName(`${i + 1}`)
 				.addText((text) => {
-					text.inputEl.setCssProps({ width: "150px" });
+					text.inputEl.setCssProps({ width: "160px" });
+					text.setPlaceholder("Name")
+						.setValue(rule.name)
+						.onChange(async (value) => {
+							rule.name = value;
+							await this.plugin.saveSettings();
+						});
+				})
+				.addText((text) => {
+					text.inputEl.setCssProps({ width: "110px" });
 					text.setPlaceholder("Source")
 						.setValue(rule.sourcePath)
 						.onChange(async (value) => {
@@ -182,7 +190,7 @@ export class SettingsTab extends PluginSettingTab {
 					});
 				})
 				.addText((text) => {
-					text.inputEl.setCssProps({ width: "150px" });
+					text.inputEl.setCssProps({ width: "110px" });
 					text.setPlaceholder("Destination")
 						.setValue(rule.destinationPath)
 						.onChange(async (value) => {
@@ -190,9 +198,9 @@ export class SettingsTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						});
 					new PathSuggest(this.app, text.inputEl, {
-						foldersOnly: false,
+						foldersOnly: true,
 						includeMdFiles: () =>
-							this.plugin.settings.includeMdFilesInSuggestions,
+							false, // destination must be a folder
 					});
 				})
 				.addButton((btn) =>
@@ -207,7 +215,7 @@ export class SettingsTab extends PluginSettingTab {
 						}),
 				);
 
-			// Drag handle — appended after controlEl so it sits rightmost
+			// drag handle
 			const handle = setting.settingEl.createEl("span", { text: "⠿" });
 			handle.setCssProps({
 				cursor: "grab",
@@ -217,28 +225,6 @@ export class SettingsTab extends PluginSettingTab {
 				"flex-shrink": "0",
 			});
 			setting.settingEl.draggable = true;
-
-			// Editable name in place of the setting label
-			setting.nameEl.empty();
-			const nameInput = setting.nameEl.createEl("input", {
-				type: "text",
-				placeholder: `Rule ${i + 1}`,
-			});
-			nameInput.value = rule.name;
-			nameInput.setCssProps({
-				background: "var(--background-secondary)",
-				border: "1px solid var(--background-modifier-border-hover)",
-				"border-radius": "var(--radius-s)",
-				padding: "2px 6px",
-				"font-weight": "var(--font-semibold)",
-				"font-size": "var(--font-ui-medium)",
-				color: "var(--text-normal)",
-				width: "100%",
-			});
-			nameInput.addEventListener("change", () => {
-				rule.name = nameInput.value;
-				void this.plugin.saveSettings();
-			});
 
 			setting.settingEl.addEventListener("dragstart", (e) => {
 				e.dataTransfer?.setData("text/plain", String(i));
@@ -265,7 +251,7 @@ export class SettingsTab extends PluginSettingTab {
 			});
 		});
 
-		// Add rule button — plain div so Obsidian doesn't collapse it
+		// add rule button
 		const addButtonContainer = containerEl.createDiv();
 		addButtonContainer.setCssProps({
 			display: "flex",
@@ -273,7 +259,7 @@ export class SettingsTab extends PluginSettingTab {
 			padding: "6px 0",
 		});
 		new ButtonComponent(addButtonContainer)
-			.setButtonText("Add rule +")
+			.setButtonText("Add new rule")
 			.setCta()
 			.onClick(() => {
 				this.plugin.settings.rules.push({

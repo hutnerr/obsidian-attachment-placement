@@ -24,7 +24,7 @@ export class Clogger {
 		const timestamp = Clogger._getTimestamp();
 		const output = `${timestamp}${tag.padEnd(8)} | ${msg}`;
 
-		console.debug(output); // changed from console.log — only warn/error/debug allowed
+		console.debug(output);
 
 		if (alert && !Clogger.disableNotifications) {
 			new Notice(output, Clogger.noticeTimeout);

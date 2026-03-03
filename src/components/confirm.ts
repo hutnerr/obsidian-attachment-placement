@@ -14,7 +14,7 @@ export class ConfirmModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl("h3", { text: "Confirm action" }); // sentence case
+		contentEl.createEl("h3", { text: "Confirm action" });
 
 		contentEl.createEl("p", { text: this.message });
 
