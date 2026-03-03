@@ -1,9 +1,4 @@
-import {
-	App,
-	PluginSettingTab,
-	Setting,
-	ButtonComponent,
-} from "obsidian";
+import { App, PluginSettingTab, Setting, ButtonComponent } from "obsidian";
 import AttachmentPlacementPlugin from "./main";
 import { Clogger } from "clogger";
 import { ConfirmModal } from "./components/confirm";
@@ -51,14 +46,11 @@ export class SettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		// GENERAL SETTINGS — use setHeading() instead of createEl("h2")
-		new Setting(containerEl).setName("Attachment placement").setHeading();
+		// new Setting(containerEl).setName("Main Settings").setHeading();
 
 		new Setting(containerEl)
 			.setName("Fallback destination")
-			.setDesc(
-				"Used when no rule matches. Leave empty to use Obsidian's default.",
-			)
+			.setDesc("Used when no rule matches.")
 			.addText((text) => {
 				text.setPlaceholder("e.g. assets/")
 					.setValue(this.plugin.settings.fallbackPath)
@@ -74,14 +66,12 @@ export class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Fallback depth limit") // sentence case
+			.setName("Fallback depth limit")
 			.setDesc(
-				"How many levels it will go up before giving up and using the fallback destination. " +
-					"Likely only useful if experiencing lag or for extremely nested folder structures. " +
-					"Leave empty for no limit.",
+				"How many levels it will go up before giving up and using the fallback destination. Likely only useful if experiencing lag or for extremely nested folder structures. Leave empty for no limit.",
 			)
 			.addText((text) => {
-				text.setPlaceholder("e.g. 5")
+				text.setPlaceholder("E.g. 5")
 					.setValue(
 						this.plugin.settings.fallbackDepthLimit?.toString() ??
 							"",
@@ -110,7 +100,7 @@ export class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Include MD files in suggestions") // already sentence case
+			.setName("Include md files in source suggestions") // already sentence case
 			.setDesc(
 				"When enabled, MD files will be included in the suggestions for attachment placement. " +
 					"When disabled, only folders will be suggested. " +
@@ -141,7 +131,9 @@ export class SettingsTab extends PluginSettingTab {
 							"Are you sure you want to reset all settings?",
 							() => {
 								this.plugin.settings = { ...DEFAULT_SETTINGS };
-								void this.plugin.saveSettings().then(() => this.display());
+								void this.plugin
+									.saveSettings()
+									.then(() => this.display());
 							},
 						).open();
 					}),
@@ -160,7 +152,9 @@ export class SettingsTab extends PluginSettingTab {
 							"Are you sure you want to delete all placement rules?",
 							() => {
 								this.plugin.settings.rules = [];
-								void this.plugin.saveSettings().then(() => this.display());
+								void this.plugin
+									.saveSettings()
+									.then(() => this.display());
 							},
 						).open();
 					}),
@@ -207,7 +201,9 @@ export class SettingsTab extends PluginSettingTab {
 						.setTooltip("Delete rule")
 						.onClick(() => {
 							rules.splice(i, 1);
-							void this.plugin.saveSettings().then(() => this.display());
+							void this.plugin
+								.saveSettings()
+								.then(() => this.display());
 						}),
 				);
 
@@ -277,7 +273,7 @@ export class SettingsTab extends PluginSettingTab {
 			padding: "6px 0",
 		});
 		new ButtonComponent(addButtonContainer)
-			.setButtonText("+ Add rule") // sentence case
+			.setButtonText("Add rule +")
 			.setCta()
 			.onClick(() => {
 				this.plugin.settings.rules.push({

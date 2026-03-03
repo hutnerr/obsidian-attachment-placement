@@ -3,12 +3,8 @@ import {
 	AbstractInputSuggest,
 	TAbstractFile,
 	TFile,
-	PluginSettingTab,
-	Setting,
 	TFolder,
 } from "obsidian";
-import { Clogger } from "clogger";
-import { ConfirmModal } from "components/confirm";
 
 export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
 	constructor(
@@ -33,7 +29,8 @@ export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
 				if (file instanceof TFolder) return true;
 
 				if (file instanceof TFile) {
-					if (this.options.includeMdFiles()) return file.extension === "md";
+					if (this.options.includeMdFiles())
+						return file.extension === "md";
 					return false; // if MD not included → no files allowed
 				}
 
