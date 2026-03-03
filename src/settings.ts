@@ -1,4 +1,10 @@
-import { App, PluginSettingTab, Setting, ButtonComponent } from "obsidian";
+import {
+	App,
+	PluginSettingTab,
+	Setting,
+	ButtonComponent,
+	Notice,
+} from "obsidian";
 import AttachmentPlacementPlugin from "./main";
 import { Clogger } from "clogger";
 import { ConfirmModal } from "./components/confirm";
@@ -46,6 +52,38 @@ export class SettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
+		const attachmentPath = (this.app.vault as any).getConfig(
+			"attachmentFolderPath",
+		) as string;
+
+		if (attachmentPath !== "./") {
+			const setting = new Setting(containerEl)
+				.setName("⚠ Attachment folder setting is incorrect ⚠")
+				.setDesc(
+					'This plugin requires "Default location for new attachments" to be set to "Same folder as current file".',
+				);
+
+			setting.settingEl.addClass("mod-warning");
+
+			setting.addButton((btn) =>
+				btn
+					.setButtonText("Fix automatically")
+					.setWarning() // makes button red
+					.onClick(async () => {
+						await (this.app.vault as any).setConfig(
+							"attachmentFolderPath",
+							"./",
+						);
+
+						new Notice(
+							"Attachment folder set to 'Same folder as current file'.",
+						);
+
+						this.display(); // refresh settings UI
+					}),
+			);
+		}
+
 		new Setting(containerEl)
 			.setName("Fallback destination")
 			.setDesc("Used when no rule matches.")
@@ -75,10 +113,10 @@ export class SettingsTab extends PluginSettingTab {
 							"",
 					)
 					.onChange(async (value) => {
-						const num = parseInt(value);
-						this.plugin.settings.fallbackDepthLimit = isNaN(num)
-							? undefined
-							: num;
+						const cleaned = value.replace(/[^0-9]/g, "");
+						if (cleaned !== value) text.setValue(cleaned);
+						this.plugin.settings.fallbackDepthLimit =
+							cleaned === "" ? undefined : parseInt(cleaned);
 						await this.plugin.saveSettings();
 					});
 			});
@@ -199,8 +237,7 @@ export class SettingsTab extends PluginSettingTab {
 						});
 					new PathSuggest(this.app, text.inputEl, {
 						foldersOnly: true,
-						includeMdFiles: () =>
-							false, // destination must be a folder
+						includeMdFiles: () => false, // destination must be a folder
 					});
 				})
 				.addButton((btn) =>
