@@ -20,7 +20,7 @@ export default class AttachmentPlacementPlugin extends Plugin {
 				const destinationFolder = await this.placementManager.getDestinationFolder(activeFile?.path);
 
 				if (destinationFolder) {
-					const base = `${destinationFolder}/${filename}`;
+					const base = destinationFolder ? `${destinationFolder}/${filename}` : filename;
 					let candidate = `${base}.${extension}`;
 
 					let i = 1;

@@ -136,9 +136,9 @@ export class SettingsTab extends PluginSettingTab {
 			const rules = this.plugin.settings.rules;
 
 			const setting = new Setting(containerEl)
-				.setName(`${i + 1}`)
+				.setName(`${i + 1}.`)
 				.addText((text) => {
-					text.inputEl.setCssProps({ width: "160px" });
+					text.inputEl.setCssProps({ width: "40%" });
 					text.setPlaceholder("Name")
 						.setValue(rule.name)
 						.onChange(async (value) => {
@@ -147,7 +147,7 @@ export class SettingsTab extends PluginSettingTab {
 						});
 				})
 				.addText((text) => {
-					text.inputEl.setCssProps({ width: "110px" });
+					text.inputEl.setCssProps({ width: "25%" });
 					text.setPlaceholder("Source")
 						.setValue(rule.sourcePath)
 						.onChange(async (value) => {
@@ -157,7 +157,7 @@ export class SettingsTab extends PluginSettingTab {
 					new PathSuggest(this.app, text.inputEl, { foldersOnly: false, includeMdFiles: () => false,});
 				})
 				.addText((text) => {
-					text.inputEl.setCssProps({ width: "110px" });
+					text.inputEl.setCssProps({ width: "25%" });
 					text.setPlaceholder("Destination")
 						.setValue(rule.destinationPath)
 						.onChange(async (value) => {
@@ -233,5 +233,38 @@ export class SettingsTab extends PluginSettingTab {
 				});
 				void this.plugin.saveSettings().then(() => this.display());
 			});
+
+				// ---- Support Section ----
+		containerEl.createEl("hr");
+
+		const supportContainer = containerEl.createDiv();
+		supportContainer.setCssProps({
+			display: "flex",
+			"flex-direction": "column",
+			"align-items": "center",
+			"margin-top": "20px",
+			"padding-bottom": "10px",
+			gap: "8px",
+		});
+
+		supportContainer.createEl("div", {
+			text: "If you find this plugin helpful, consider supporting development",
+		}).setCssProps({
+			"font-size": "0.9em",
+			color: "var(--text-muted)",
+			"text-align": "center",
+		});
+
+		const link = supportContainer.createEl("a", {
+			text: "Support me on Ko-fi",
+			href: "https://ko-fi.com/hutner",
+		});
+
+		link.setCssProps({
+			"font-weight": "600",
+			"text-decoration": "none",
+		});
+
+		link.target = "_blank";
 	}
 }

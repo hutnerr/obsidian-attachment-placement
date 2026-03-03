@@ -87,9 +87,12 @@ export class PlacementManager {
 	}
 
 	_validateFolder(folderPath: string | null): string | null {
-		if (!folderPath) return null;
+		if (folderPath === null || folderPath === undefined) return null;
 
-		const normalized = folderPath.replace(/\/$/, "");
+		const normalized = folderPath.replace(/^\/+|\/+$/g, "");
+		
+		if (normalized === "") return ""; // root is always valid
+
 		const exists = this.plugin.app.vault.getAbstractFileByPath(normalized) !== null;
 
 		if (!exists) {
