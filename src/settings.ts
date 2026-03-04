@@ -54,12 +54,17 @@ export class SettingsTab extends PluginSettingTab {
 						this.plugin.settings.fallbackPath = value;
 						await this.plugin.saveSettings();
 					});
-				new PathSuggest(this.app, text.inputEl, {foldersOnly: true, includeMdFiles: () => false,});
+				new PathSuggest(this.app, text.inputEl, {
+					foldersOnly: true,
+					includeMdFiles: () => false,
+				});
 			});
 
 		new Setting(containerEl)
 			.setName("Fallback depth limit")
-			.setDesc("How many levels it will go up before giving up and using the fallback destination. Likely only useful if experiencing lag or for extremely nested folder structures. Leave empty for no limit.",)
+			.setDesc(
+				"How many levels it will go up before giving up and using the fallback destination. Likely only useful if experiencing lag or for extremely nested folder structures. Leave empty for no limit.",
+			)
 			.addText((text) => {
 				text.setPlaceholder("E.g. 5")
 					.setValue(
@@ -77,7 +82,9 @@ export class SettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Notifications")
-			.setDesc("Enable or disable notifications for attachment placement actions.",)
+			.setDesc(
+				"Enable or disable notifications for attachment placement actions.",
+			)
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.notificationsEnabled)
@@ -89,7 +96,9 @@ export class SettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Reset settings")
-			.setDesc("Reset all settings to their default values. This cannot be undone.",)
+			.setDesc(
+				"Reset all settings to their default values. This cannot be undone.",
+			)
 			.addButton((btn) =>
 				btn
 					.setButtonText("Reset")
@@ -99,10 +108,12 @@ export class SettingsTab extends PluginSettingTab {
 							this.app,
 							"Are you sure you want to reset all settings?",
 							() => {
-								this.plugin.settings = { ...DEFAULT_SETTINGS };
-								void this.plugin
-									.saveSettings()
-									.then(() => this.display());
+								void this.plugin.saveSettings().then(() => {
+									this.plugin.settings = {
+										...DEFAULT_SETTINGS,
+									};
+									this.display();
+								});
 							},
 						).open();
 					}),
@@ -138,7 +149,7 @@ export class SettingsTab extends PluginSettingTab {
 			const setting = new Setting(containerEl)
 				.setName(`${i + 1}.`)
 				.addText((text) => {
-					text.inputEl.setCssProps({ width: "40%" });
+					text.inputEl.addClass("ap-rule-name");
 					text.setPlaceholder("Name")
 						.setValue(rule.name)
 						.onChange(async (value) => {
@@ -147,24 +158,30 @@ export class SettingsTab extends PluginSettingTab {
 						});
 				})
 				.addText((text) => {
-					text.inputEl.setCssProps({ width: "25%" });
+					text.inputEl.addClass("ap-rule-path");
 					text.setPlaceholder("Source")
 						.setValue(rule.sourcePath)
 						.onChange(async (value) => {
 							rule.sourcePath = value;
 							await this.plugin.saveSettings();
 						});
-					new PathSuggest(this.app, text.inputEl, { foldersOnly: false, includeMdFiles: () => false,});
+					new PathSuggest(this.app, text.inputEl, {
+						foldersOnly: false,
+						includeMdFiles: () => false,
+					});
 				})
 				.addText((text) => {
-					text.inputEl.setCssProps({ width: "25%" });
+					text.inputEl.addClass("ap-rule-path");
 					text.setPlaceholder("Destination")
 						.setValue(rule.destinationPath)
 						.onChange(async (value) => {
 							rule.destinationPath = value;
 							await this.plugin.saveSettings();
 						});
-					new PathSuggest(this.app, text.inputEl, { foldersOnly: true, includeMdFiles: () => false, });
+					new PathSuggest(this.app, text.inputEl, {
+						foldersOnly: true,
+						includeMdFiles: () => false,
+					});
 				})
 				.addButton((btn) =>
 					btn
@@ -179,23 +196,19 @@ export class SettingsTab extends PluginSettingTab {
 				);
 
 			// drag handle
-			const handle = setting.settingEl.createEl("span", { text: "⠿" });
-			handle.setCssProps({
-				cursor: "grab",
-				color: "var(--text-muted)",
-				padding: "0 8px",
-				"font-size": "1.2em",
-				"flex-shrink": "0",
+			setting.settingEl.createEl("span", {
+				text: "⠿",
+				cls: "ap-drag-handle",
 			});
 			setting.settingEl.draggable = true;
 
 			setting.settingEl.addEventListener("dragstart", (e) => {
 				e.dataTransfer?.setData("text/plain", String(i));
-				setting.settingEl.setCssProps({ opacity: "0.4" });
+				setting.settingEl.addClass("ap-dragging");
 			});
 
 			setting.settingEl.addEventListener("dragend", () => {
-				setting.settingEl.setCssProps({ opacity: "1" });
+				setting.settingEl.removeClass("ap-dragging");
 			});
 
 			setting.settingEl.addEventListener("dragover", (e) => {
@@ -215,54 +228,40 @@ export class SettingsTab extends PluginSettingTab {
 		});
 
 		// add rule button
-		const addButtonContainer = containerEl.createDiv();
-		addButtonContainer.setCssProps({
-			display: "flex",
-			"justify-content": "flex-start",
-			padding: "6px 0",
+		const addButtonContainer = containerEl.createDiv({
+			cls: "ap-add-rule-container",
 		});
 		new ButtonComponent(addButtonContainer)
 			.setButtonText("Add new rule")
 			.setCta()
-			.onClick(() => {
+			.onClick(async () => {
 				this.plugin.settings.rules.push({
 					id: generateId(),
 					name: "",
 					sourcePath: "",
 					destinationPath: "",
 				});
-				void this.plugin.saveSettings().then(() => this.display());
+				await this.plugin.saveSettings();
+				this.display();
 			});
 
-		// ---- Support Section ----
+
+		// support
 		containerEl.createEl("hr");
 
-		const supportContainer = containerEl.createDiv();
-		supportContainer.setCssProps({
-			display: "flex",
-			"flex-direction": "column",
-			"align-items": "center",
-			"margin-top": "20px",
-			"padding-bottom": "10px",
-			gap: "8px",
+		const supportContainer = containerEl.createDiv({
+			cls: "ap-support-container",
 		});
 
 		supportContainer.createEl("div", {
 			text: "If you find this plugin helpful, consider supporting development",
-		}).setCssProps({
-			"font-size": "0.9em",
-			color: "var(--text-muted)",
-			"text-align": "center",
+			cls: "ap-support-text",
 		});
 
 		const link = supportContainer.createEl("a", {
 			text: "Support me on ko-fi",
 			href: "https://ko-fi.com/hutner",
-		});
-
-		link.setCssProps({
-			"font-weight": "600",
-			"text-decoration": "none",
+			cls: "ap-support-link",
 		});
 
 		link.target = "_blank";

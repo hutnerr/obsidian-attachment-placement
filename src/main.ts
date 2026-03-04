@@ -3,7 +3,11 @@ import { DEFAULT_SETTINGS, Settings, SettingsTab } from "./settings";
 import { Clogger } from "clogger";
 import { PlacementManager } from "./placement";
 
-type AttachmentPathFn = (filename: string, extension: string, activeFile: TFile | null) => Promise<string>;
+type AttachmentPathFn = (
+	filename: string,
+	extension: string,
+	activeFile: TFile | null,
+) => Promise<string>;
 
 interface VaultWithAttachmentPath extends Vault {
 	getAvailablePathForAttachments?: AttachmentPathFn;
@@ -13,48 +17,61 @@ export default class AttachmentPlacementPlugin extends Plugin {
 	settings: Settings;
 	placementManager: PlacementManager;
 
-	onload(): void {
+	async onload(): Promise<void> {
 		Clogger.debug("Starting AttachmentPlacementPlugin...", true);
-		void this.loadSettings().then(() => {
-			this.placementManager = new PlacementManager(this);
-			this.addSettingTab(new SettingsTab(this.app, this));
+		await this.loadSettings();
 
-			const vault = this.app.vault as VaultWithAttachmentPath;
-			const original = vault.getAvailablePathForAttachments!.bind(vault);
+		this.placementManager = new PlacementManager(this);
+		this.addSettingTab(new SettingsTab(this.app, this));
 
-			vault.getAvailablePathForAttachments = async (filename: string, extension: string, activeFile: TFile | null): Promise<string> => {
-				const destinationFolder = this.placementManager.getDestinationFolder(activeFile?.path);
+		const vault = this.app.vault as VaultWithAttachmentPath;
+		const original = vault.getAvailablePathForAttachments!.bind(vault);
 
-				if (destinationFolder !== null) {
-					const base = destinationFolder ? `${destinationFolder}/${filename}` : filename;
-					let candidate = `${base}.${extension}`;
+		vault.getAvailablePathForAttachments = async (
+			filename: string,
+			extension: string,
+			activeFile: TFile | null,
+		): Promise<string> => {
+			const destinationFolder =
+				this.placementManager.getDestinationFolder(activeFile?.path);
 
-					let i = 1;
-					while (this.app.vault.getAbstractFileByPath(candidate) !== null) {
-						candidate = `${base} ${i}.${extension}`;
-						i++;
-					}
+			if (destinationFolder !== null) {
+				const prefix =
+					destinationFolder !== "" ? `${destinationFolder}/` : "";
+				let candidate = `${prefix}${filename}.${extension}`;
 
-					Clogger.debug(`Redirecting attachment to: ${candidate}`, true);
-					return candidate;
+				let i = 1;
+				while (
+					this.app.vault.getAbstractFileByPath(candidate) !== null
+				) {
+					candidate = `${prefix}${filename} ${i}.${extension}`;
+					i++;
 				}
 
-				return original(filename, extension, activeFile);
-			};
+				Clogger.debug(`Redirecting attachment to: ${candidate}`, true);
+				return candidate;
+			}
 
-			Clogger.debug("AttachmentPlacementPlugin loaded successfully.", true);
-		});
+			return original(filename, extension, activeFile);
+		};
+
+		Clogger.debug("AttachmentPlacementPlugin loaded successfully.", true);
 	}
 
 	onunload(): void {
 		Clogger.debug("Unloading AttachmentPlacementPlugin...", true);
-		delete (this.app.vault as VaultWithAttachmentPath).getAvailablePathForAttachments;
+		delete (this.app.vault as VaultWithAttachmentPath)
+			.getAvailablePathForAttachments;
 		Clogger.debug("AttachmentPlacementPlugin unloaded successfully.", true);
 	}
 
 	async loadSettings(): Promise<void> {
 		Clogger.debug("Loading settings...");
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<Settings>);
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			(await this.loadData()) as Partial<Settings>,
+		);
 		Clogger.debug("Settings loaded: " + JSON.stringify(this.settings));
 	}
 

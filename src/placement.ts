@@ -1,6 +1,6 @@
+import { normalizePath, Notice } from "obsidian";
 import { Clogger } from "clogger";
 import AttachmentPlacementPlugin from "main";
-import { Notice } from "obsidian";
 
 export class PlacementManager {
 	plugin: AttachmentPlacementPlugin;
@@ -14,25 +14,34 @@ export class PlacementManager {
 
 		// clear cache when folders are created/deleted
 		this.plugin.registerEvent(
-			this.plugin.app.vault.on("create", () => this.destinationCache.clear())
+			this.plugin.app.vault.on("create", () =>
+				this.destinationCache.clear(),
+			),
 		);
 		this.plugin.registerEvent(
-			this.plugin.app.vault.on("delete", () => this.destinationCache.clear())
+			this.plugin.app.vault.on("delete", () =>
+				this.destinationCache.clear(),
+			),
 		);
 		this.plugin.registerEvent(
-			this.plugin.app.vault.on("rename", () => this.destinationCache.clear())
+			this.plugin.app.vault.on("rename", () =>
+				this.destinationCache.clear(),
+			),
 		);
 	}
 
 	rebuildRuleMap(): void {
 		this.ruleMap = new Map(
 			this.plugin.settings.rules.map((rule) => [
-				rule.sourcePath.replace(/\/$/, ""),
+				normalizePath(rule.sourcePath),
 				rule.destinationPath,
 			]),
 		);
 		this.destinationCache.clear();
-		Clogger.debug(`Rule map rebuilt with ${this.ruleMap.size} entries, cache cleared.`, true);
+		Clogger.debug(
+			`Rule map rebuilt with ${this.ruleMap.size} entries, cache cleared.`,
+			true,
+		);
 	}
 
 	getDestinationFolder(activePath: string | undefined): string | null {
@@ -51,7 +60,9 @@ export class PlacementManager {
 	private _resolveDestination(activePath: string | undefined): string | null {
 		if (!activePath) {
 			Clogger.debug("No active path provided.", true);
-			return this._validateFolder(this.plugin.settings.fallbackPath ?? null);
+			return this._validateFolder(
+				this.plugin.settings.fallbackPath ?? null,
+			);
 		}
 
 		let limit = this.plugin.settings.fallbackDepthLimit ?? 99;
@@ -70,41 +81,45 @@ export class PlacementManager {
 		return this._validateFolder(this.plugin.settings.fallbackPath ?? null);
 	}
 
-	_goUpOneLevel(path: string): string {
-		const parts = path.replace(/\/$/, "").split("/");
+	private _goUpOneLevel(path: string): string {
+		const parts = normalizePath(path).split("/");
 		parts.pop();
 		return parts.join("/");
 	}
 
-	_findPlacementRule(folderPath: string): string | null {
-		const normalized = folderPath.replace(/\/$/, "");
+	private _findPlacementRule(folderPath: string): string | null {
+		const normalized = normalizePath(folderPath);
 		const destination = this.ruleMap.get(normalized);
 		if (destination !== undefined) {
-			Clogger.debug(`Found matching rule: ${normalized} -> ${destination}`, true);
+			Clogger.debug(
+				`Found matching rule: ${normalized} -> ${destination}`,
+				true,
+			);
 			return destination;
 		}
 		return null;
 	}
 
-	_validateFolder(folderPath: string | null): string | null {
+	private _validateFolder(folderPath: string | null): string | null {
 		if (folderPath === null || folderPath === undefined) return null;
 
-		const normalized = folderPath.replace(/^\/+|\/+$/g, "");
-		
-		if (normalized === "") return ""; // root is always valid
+		const normalized = normalizePath(folderPath);
 
-		const exists = this.plugin.app.vault.getAbstractFileByPath(normalized) !== null;
+		if (normalized === "." || normalized === "/") return ""; // return "." or "/" for empty/root
+
+		const exists =
+			this.plugin.app.vault.getAbstractFileByPath(normalized) !== null;
 
 		if (!exists) {
-			Clogger.error(`Destination folder does not exist: ${normalized}`, false);
-			// if (this.plugin.settings.notificationsEnabled) {}
-			new Notice(`⚠️ Attachment Placement: folder "${normalized}" does not exist. Please check your settings.`);
+			Clogger.error(
+				`Destination folder does not exist: ${normalized}`,
+				false,
+			);
+			new Notice(
+				`⚠️ Attachment Placement: folder "${normalized}" does not exist. Please check your settings.`,
+			);
 			return null;
 		}
 		return normalized;
-	}
-
-	_folderExists(folderPath: string): boolean {
-		return this.plugin.app.vault.getAbstractFileByPath(folderPath) !== null;
 	}
 }

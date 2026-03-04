@@ -1,8 +1,20 @@
-import { App, AbstractInputSuggest, TAbstractFile, TFile, TFolder } from "obsidian";
+import {
+	App,
+	AbstractInputSuggest,
+	TAbstractFile,
+	TFile,
+	TFolder,
+} from "obsidian";
 
 export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
-	constructor(app: App, private inputEl: HTMLInputElement, private options: { 
-		foldersOnly: boolean; includeMdFiles: () => boolean; }) {
+	constructor(
+		app: App,
+		private inputEl: HTMLInputElement,
+		private options: {
+			foldersOnly: boolean;
+			includeMdFiles: () => boolean;
+		},
+	) {
 		super(app, inputEl);
 	}
 
@@ -17,7 +29,8 @@ export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
 				if (file instanceof TFolder) return true;
 
 				if (file instanceof TFile) {
-					if (this.options.includeMdFiles()) return file.extension === "md";
+					if (this.options.includeMdFiles())
+						return file.extension === "md";
 					return false; // if MD not included → no files allowed
 				}
 				return false;
