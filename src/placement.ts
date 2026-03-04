@@ -12,7 +12,7 @@ export class PlacementManager {
 		Clogger.debug("Initializing PlacementManager...", true);
 		this.rebuildRuleMap();
 
-		// invalidate cache when folders are created or deleted
+		// clear cache when folders are created/deleted
 		this.plugin.registerEvent(
 			this.plugin.app.vault.on("create", () => this.destinationCache.clear())
 		);
@@ -97,9 +97,8 @@ export class PlacementManager {
 
 		if (!exists) {
 			Clogger.error(`Destination folder does not exist: ${normalized}`, false);
-			if (this.plugin.settings.notificationsEnabled) {
-				new Notice(`⚠️ Attachment Placement: folder "${normalized}" does not exist. Please check your settings.`);
-			}
+			// if (this.plugin.settings.notificationsEnabled) {}
+			new Notice(`⚠️ Attachment Placement: folder "${normalized}" does not exist. Please check your settings.`);
 			return null;
 		}
 		return normalized;

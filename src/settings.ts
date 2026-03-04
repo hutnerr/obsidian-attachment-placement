@@ -234,7 +234,7 @@ export class SettingsTab extends PluginSettingTab {
 				void this.plugin.saveSettings().then(() => this.display());
 			});
 
-				// ---- Support Section ----
+		// ---- Support Section ----
 		containerEl.createEl("hr");
 
 		const supportContainer = containerEl.createDiv();
