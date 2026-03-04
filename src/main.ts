@@ -23,7 +23,7 @@ export default class AttachmentPlacementPlugin extends Plugin {
 			const original = vault.getAvailablePathForAttachments!.bind(vault);
 
 			vault.getAvailablePathForAttachments = async (filename: string, extension: string, activeFile: TFile | null): Promise<string> => {
-				const destinationFolder = await this.placementManager.getDestinationFolder(activeFile?.path);
+				const destinationFolder = this.placementManager.getDestinationFolder(activeFile?.path);
 
 				if (destinationFolder !== null) {
 					const base = destinationFolder ? `${destinationFolder}/${filename}` : filename;

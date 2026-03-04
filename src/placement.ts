@@ -35,7 +35,7 @@ export class PlacementManager {
 		Clogger.debug(`Rule map rebuilt with ${this.ruleMap.size} entries, cache cleared.`, true);
 	}
 
-	async getDestinationFolder(activePath: string | undefined): Promise<string | null> {
+	getDestinationFolder(activePath: string | undefined): string | null {
 		const cacheKey = activePath ?? "__fallback__";
 
 		if (this.destinationCache.has(cacheKey)) {
