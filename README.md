@@ -5,6 +5,10 @@ Instead of forcing all new resources into a single hardcoded folder, it lets you
 
 This plugin would likely be useful for people who like to copy-paste in images and would like some further organization.
 
+**Links**
+- [Showcase](https://www.hunter-baker.com/pages/projects/obsidian-attachment-plugin.html)
+- [Help Page](https://www.hunter-baker.com/pages/other/obsidian-attachment-placement-help.html)
+
 ## How To Use
 Placement rules can be defined on individual folders.
 
@@ -46,6 +50,7 @@ To complete the example, these are what some actual placement rules might look l
 
 <img width="720" height="360" alt="image" src="https://github.com/user-attachments/assets/79d44fbe-d42d-433e-81c5-577afa1c3e86" />
 
+If you'd like another example, check out the [help page](https://www.hunter-baker.com/pages/other/obsidian-attachment-placement-help.html).
 
 ## Future Roadmap
 1. Allow sources to be `.md` files for even finer control.
