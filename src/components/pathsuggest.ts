@@ -35,11 +35,12 @@ export class PathSuggest extends AbstractInputSuggest<TAbstractFile> {
 				}
 				return false;
 			})
+			.sort((a, b) => a.path.localeCompare(b.path))
 			.slice(0, 50);
 	}
 
 	renderSuggestion(file: TAbstractFile, el: HTMLElement) {
-		el.createEl("div", { text: file.path });
+		el.createDiv({ text: file.path });
 	}
 
 	selectSuggestion(file: TAbstractFile) {

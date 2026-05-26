@@ -35,7 +35,7 @@ export class SettingsTab extends PluginSettingTab {
 	constructor(app: App, plugin: AttachmentPlacementPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
-		Clogger.debug("Initializing settings tab...", true);
+		Clogger.debug("Initializing settings tab...");
 	}
 
 	hide() {}
@@ -108,12 +108,8 @@ export class SettingsTab extends PluginSettingTab {
 							this.app,
 							"Are you sure you want to reset all settings?",
 							() => {
-								void this.plugin.saveSettings().then(() => {
-									this.plugin.settings = {
-										...DEFAULT_SETTINGS,
-									};
-									this.display();
-								});
+								this.plugin.settings = { ...DEFAULT_SETTINGS };
+								void this.plugin.saveSettings().then(() => this.display());
 							},
 						).open();
 					}),
@@ -167,7 +163,7 @@ export class SettingsTab extends PluginSettingTab {
 						});
 					new PathSuggest(this.app, text.inputEl, {
 						foldersOnly: false,
-						includeMdFiles: () => false,
+						includeMdFiles: () => true,
 					});
 				})
 				.addText((text) => {
@@ -196,7 +192,7 @@ export class SettingsTab extends PluginSettingTab {
 				);
 
 			// drag handle
-			setting.settingEl.createEl("span", {
+			setting.settingEl.createSpan({
 				text: "⠿",
 				cls: "ap-drag-handle",
 			});
@@ -253,17 +249,19 @@ export class SettingsTab extends PluginSettingTab {
 			cls: "ap-support-container",
 		});
 
-		supportContainer.createEl("div", {
-			text: "If you find this plugin helpful, consider supporting development",
-			cls: "ap-support-text",
+
+		const helpLink = supportContainer.createEl("a", {
+			text: "Help page",
+			href: "https://www.hunter-baker.com/pages/other/obsidian-attachment-placement-help.html",
+			cls: "ap-support-link",
 		});
+		helpLink.target = "_blank";
 
 		const link = supportContainer.createEl("a", {
 			text: "Support me on ko-fi",
 			href: "https://ko-fi.com/hutner",
 			cls: "ap-support-link",
 		});
-
 		link.target = "_blank";
 	}
 }

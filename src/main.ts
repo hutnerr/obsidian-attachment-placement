@@ -1,4 +1,4 @@
-import { Plugin, TFile, Vault } from "obsidian";
+import { Notice, Plugin, TFile, Vault } from "obsidian";
 import { DEFAULT_SETTINGS, Settings, SettingsTab } from "./settings";
 import { Clogger } from "clogger";
 import { PlacementManager } from "./placement";
@@ -16,16 +16,18 @@ interface VaultWithAttachmentPath extends Vault {
 export default class AttachmentPlacementPlugin extends Plugin {
 	settings: Settings;
 	placementManager: PlacementManager;
+	private originalGetAvailablePath: AttachmentPathFn | undefined;
 
 	async onload(): Promise<void> {
-		Clogger.debug("Starting AttachmentPlacementPlugin...", true);
+		Clogger.debug("Starting AttachmentPlacementPlugin...");
 		await this.loadSettings();
 
 		this.placementManager = new PlacementManager(this);
 		this.addSettingTab(new SettingsTab(this.app, this));
 
 		const vault = this.app.vault as VaultWithAttachmentPath;
-		const original = vault.getAvailablePathForAttachments!.bind(vault);
+		this.originalGetAvailablePath =
+			vault.getAvailablePathForAttachments!.bind(vault);
 
 		vault.getAvailablePathForAttachments = async (
 			filename: string,
@@ -48,21 +50,29 @@ export default class AttachmentPlacementPlugin extends Plugin {
 					i++;
 				}
 
-				Clogger.debug(`Redirecting attachment to: ${candidate}`, true);
+				Clogger.debug(`Redirecting attachment to: ${candidate}`);
+				if (this.settings.notificationsEnabled) {
+					const location = destinationFolder !== "" ? destinationFolder : "vault root";
+					new Notice(`Attachment placed in: ${location}`);
+				}
 				return candidate;
 			}
 
-			return original(filename, extension, activeFile);
+			return this.originalGetAvailablePath!(filename, extension, activeFile);
 		};
 
-		Clogger.debug("AttachmentPlacementPlugin loaded successfully.", true);
+		Clogger.debug("AttachmentPlacementPlugin loaded successfully.");
 	}
 
 	onunload(): void {
-		Clogger.debug("Unloading AttachmentPlacementPlugin...", true);
-		delete (this.app.vault as VaultWithAttachmentPath)
-			.getAvailablePathForAttachments;
-		Clogger.debug("AttachmentPlacementPlugin unloaded successfully.", true);
+		Clogger.debug("Unloading AttachmentPlacementPlugin...");
+		const vault = this.app.vault as VaultWithAttachmentPath;
+		if (this.originalGetAvailablePath) {
+			vault.getAvailablePathForAttachments = this.originalGetAvailablePath;
+		} else {
+			delete vault.getAvailablePathForAttachments;
+		}
+		Clogger.debug("AttachmentPlacementPlugin unloaded successfully.");
 	}
 
 	async loadSettings(): Promise<void> {

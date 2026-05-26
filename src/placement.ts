@@ -9,7 +9,7 @@ export class PlacementManager {
 
 	constructor(plugin: AttachmentPlacementPlugin) {
 		this.plugin = plugin;
-		Clogger.debug("Initializing PlacementManager...", true);
+		Clogger.debug("Initializing PlacementManager...");
 		this.rebuildRuleMap();
 
 		// clear cache when folders are created/deleted
@@ -40,7 +40,6 @@ export class PlacementManager {
 		this.destinationCache.clear();
 		Clogger.debug(
 			`Rule map rebuilt with ${this.ruleMap.size} entries, cache cleared.`,
-			true,
 		);
 	}
 
@@ -48,7 +47,7 @@ export class PlacementManager {
 		const cacheKey = activePath ?? "__fallback__";
 
 		if (this.destinationCache.has(cacheKey)) {
-			Clogger.debug(`Cache hit for: ${cacheKey}`, true);
+			Clogger.debug(`Cache hit for: ${cacheKey}`);
 			return this.destinationCache.get(cacheKey)!;
 		}
 
@@ -59,10 +58,16 @@ export class PlacementManager {
 
 	private _resolveDestination(activePath: string | undefined): string | null {
 		if (!activePath) {
-			Clogger.debug("No active path provided.", true);
+			Clogger.debug("No active path provided.");
 			return this._validateFolder(
-				this.plugin.settings.fallbackPath ?? null,
+				this.plugin.settings.fallbackPath || null,
 			);
+		}
+
+		const fileRule = this._findPlacementRule(activePath);
+		if (fileRule !== null) {
+			Clogger.debug(`Found file-level rule for: ${activePath}`);
+			return this._validateFolder(fileRule);
 		}
 
 		let limit = this.plugin.settings.fallbackDepthLimit ?? 99;
@@ -70,15 +75,15 @@ export class PlacementManager {
 
 		while (parentFolder !== "" && limit > 0) {
 			const placementPath = this._findPlacementRule(parentFolder);
-			if (placementPath) {
-				Clogger.debug(`Found placement path: ${placementPath}`, true);
+			if (placementPath !== null) {
+				Clogger.debug(`Found placement path: ${placementPath}`);
 				return this._validateFolder(placementPath);
 			}
 			limit--;
 			parentFolder = this._goUpOneLevel(parentFolder);
 		}
 
-		return this._validateFolder(this.plugin.settings.fallbackPath ?? null);
+		return this._validateFolder(this.plugin.settings.fallbackPath || null);
 	}
 
 	private _goUpOneLevel(path: string): string {
@@ -93,7 +98,6 @@ export class PlacementManager {
 		if (destination !== undefined) {
 			Clogger.debug(
 				`Found matching rule: ${normalized} -> ${destination}`,
-				true,
 			);
 			return destination;
 		}
@@ -105,7 +109,7 @@ export class PlacementManager {
 
 		const normalized = normalizePath(folderPath);
 
-		if (normalized === "." || normalized === "/") return ""; // return "." or "/" for empty/root
+		if (normalized === "." || normalized === "/") return "";
 
 		const exists =
 			this.plugin.app.vault.getAbstractFileByPath(normalized) !== null;
@@ -113,11 +117,12 @@ export class PlacementManager {
 		if (!exists) {
 			Clogger.error(
 				`Destination folder does not exist: ${normalized}`,
-				false,
 			);
-			new Notice(
-				`⚠️ Attachment Placement: folder "${normalized}" does not exist. Please check your settings.`,
-			);
+			if (this.plugin.settings.notificationsEnabled) {
+				new Notice(
+					`⚠️ Attachment Placement: folder "${normalized}" does not exist. Please check your settings.`,
+				);
+			}
 			return null;
 		}
 		return normalized;
