@@ -1,22 +1,23 @@
 ## Overview
 This plugin is meant to make resource placement more flexible and context-aware.
 
-Instead of forcing all new resources into a single hardcoded folder, it lets you define where resources should go based on the file or folder you’re currently working in. The plugin will walk up the directory tree and use the first placement rule it finds.
+Instead of forcing all new resources into a single hardcoded folder, it lets you define where resources should go based on the file or folder you’re currently working in. Rules can target individual `.md` files for per-note precision, or entire folders for broader coverage. The plugin checks the active file first, then walks up the directory tree until a matching rule is found.
 
 This plugin would likely be useful for people who like to copy-paste in images and would like some further organization.
 
 **Links**
+- [Plugin Page](https://community.obsidian.md/plugins/attachment-placement)
 - [Showcase](https://www.hunter-baker.com/pages/projects/obsidian-attachment-plugin.html)
 - [Help Page](https://www.hunter-baker.com/pages/other/obsidian-attachment-placement-help.html)
 
 ## How To Use
-Placement rules can be defined on individual folders.
+Placement rules can be defined on individual files or folders.
 
 When a new resource is created:
-1. The plugin checks if the current folder has a placement rule.
-2. If not, it checks the parent folder.
-3. This continues upward until a rule is found.
-4. The resource is placed according to that rule.
+1. The plugin checks if the active file itself has a placement rule.
+2. If not, it checks the file's parent folder.
+3. If not, it checks the parent folder's parent, and so on.
+4. The resource is placed according to the first matching rule found.
 
 To get started with the plugin, open up the settings and define some rules for which attachments should be placed. 
 
@@ -40,9 +41,7 @@ Given the following structure:
         └── addition.md
 ```
 
-If we are working within `addition.md`, we will check its parent folder (`math/`) for a placement rule, if it exists, related resources will be placed using that rule.
-
-If it does not exist, we will check the next parent (`school/`). We continue this parent checking sequence until we hit a rule that we can use or hit the root folder.
+If we are working within `addition.md`, we first check if there is a rule for `addition.md` itself. If not, we check its parent folder (`math/`), then `school/`, continuing upward until a rule is found or the root is reached.
 
 If no rule is found, the plugin uses the fallback location defined in settings.
 
@@ -51,10 +50,6 @@ To complete the example, these are what some actual placement rules might look l
 <img width="720" height="360" alt="image" src="https://github.com/user-attachments/assets/79d44fbe-d42d-433e-81c5-577afa1c3e86" />
 
 If you'd like another example, check out the [help page](https://www.hunter-baker.com/pages/other/obsidian-attachment-placement-help.html).
-
-## Future Roadmap
-1. Allow sources to be `.md` files for even finer control.
-2. Option to parse and re-sort through all attachments in specific folders
 
 ## Support
 If you found this project helpful or enjoyable, and want to support future work, you can buy me a coffee on Ko-fi
